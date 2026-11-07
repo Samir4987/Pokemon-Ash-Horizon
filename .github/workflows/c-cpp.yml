@@ -31,26 +31,26 @@ jobs:
             mingw-w64-i686-gcc
             unzip
 
-      - name: Download SDL3 3.4.20 for Windows x86
+      - name: Download SDL3 3.4.20 MinGW development package (x86)
         shell: pwsh
         run: |
-          $archive = Join-Path $env:RUNNER_TEMP "SDL3-x86.zip"
+          $archive = Join-Path $env:RUNNER_TEMP "SDL3-devel-mingw.zip"
           $destination = Join-Path $env:GITHUB_WORKSPACE "SDL3"
-          Invoke-WebRequest -Uri "https://github.com/libsdl-org/SDL/releases/download/release-3.4.20/SDL3-3.4.20-win32-x86.zip" -OutFile $archive
+          Invoke-WebRequest -Uri "https://github.com/libsdl-org/SDL/releases/download/release-3.4.20/SDL3-devel-3.4.20-mingw.zip" -OutFile $archive
           Expand-Archive -Path $archive -DestinationPath $destination -Force
 
       - name: Build game
         run: |
           set -euxo pipefail
 
-          echo "Locating SDL3 development files..."
+          echo "Locating SDL3 MinGW development files..."
           SDL_HEADER="$(find SDL3 -type f -path '*/include/SDL3/SDL.h' -print -quit)"
           SDL_IMPORT_LIB="$(find SDL3 -type f -name 'libSDL3.dll.a' -print -quit)"
           SDL_DLL="$(find SDL3 -type f -name 'SDL3.dll' -print -quit)"
 
           if [ -z "$SDL_HEADER" ] || [ -z "$SDL_IMPORT_LIB" ] || [ -z "$SDL_DLL" ]; then
-            echo "ERROR: SDL3 header, import library, or DLL was not found."
-            find SDL3 -maxdepth 5 -type f -print
+            echo "ERROR: SDL3 x86 development header, import library, or runtime DLL was not found."
+            find SDL3 -maxdepth 7 -type f -print
             exit 1
           fi
 
