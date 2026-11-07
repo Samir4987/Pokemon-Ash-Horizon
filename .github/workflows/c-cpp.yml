@@ -1,23 +1,70 @@
-name: C/C++ CI
+name: Pokémon Ash Horizon - Windows 32-bit Build
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:
+    name: Build 32-bit Windows game
+    runs-on: windows-latest
 
-    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: msys2 {0}
 
     steps:
-    - uses: actions/checkout@v4
-    - name: configure
-      run: ./configure
-    - name: make
-      run: make
-    - name: make check
-      run: make check
-    - name: make distcheck
-      run: make distcheck
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up 32-bit MinGW-w64 and tools
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW32
+          update: true
+          install: >-
+            mingw-w64-i686-gcc
+            unzip
+
+      - name: Download SDL3 3.4.20 for Windows x86
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/libsdl-org/SDL/releases/download/release-3.4.20/SDL3-3.4.20-win32-x86.zip" -OutFile "$env:RUNNER_TEMP\SDL3-x86.zip"
+          Expand-Archive -Path "$env:RUNNER_TEMP\SDL3-x86.zip" -DestinationPath "$env:GITHUB_WORKSPACE\SDL3"
+
+      - name: Build game
+        run: |
+          test -f SDL3/include/SDL3/SDL.h
+          test -f SDL3/lib/libSDL3.dll.a
+          test -f SDL3/bin/SDL3.dll
+
+          g++ --version
+          g++ -std=c++17 -O2 -Wall -Wextra \
+            -static-libgcc -static-libstdc++ \
+            src/main.cpp \
+            -o PokemonAshHorizon.exe \
+            -ISDL3/include \
+            -LSDL3/lib \
+            -lSDL3
+
+          cp SDL3/bin/SDL3.dll .
+
+      - name: Verify executable is 32-bit
+        run: |
+          objdump -f PokemonAshHorizon.exe
+          objdump -f PokemonAshHorizon.exe | grep -q "pei-i386"
+
+      - name: Upload Windows x86 build
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pokemon-Ash-Horizon-Windows-x86
+          path: |
+            PokemonAshHorizon.exe
+            SDL3.dll
+          if-no-files-found: error
