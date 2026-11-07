@@ -1,5 +1,6 @@
 #include <SDL3/SDL.h>
 #include "living_world.hpp"
+#include "pokemon_sprite_bank.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -120,21 +121,31 @@ void drawWildCreature(SDL_Renderer* r, const ash_horizon::WildCreature& c,
     }
 }
 
-void drawBattle(SDL_Renderer* r, int hp, int enemyHp, int selected) {
+void drawBattle(SDL_Renderer* r, int hp, int enemyHp, int selected,
+                ash_horizon::PokemonSpriteBank& sprites) {
     fill(r, 0, 0, SCREEN_W, SCREEN_H, 190, 220, 235);
     // distant hills
     fill(r, 0, 65, SCREEN_W, 35, 135, 190, 115);
     fill(r, 0, 100, SCREEN_W, 60, 95, 170, 90);
-    // enemy platform and creature placeholder
+    // Platforms and sprite-backed battle creatures (temporary fallbacks if files are absent).
     fill(r, 142, 48, 72, 12, 115, 160, 105);
-    fill(r, 162, 25, 28, 24, 225, 125, 75);
-    fill(r, 168, 31, 5, 5, 255, 245, 210);
-    fill(r, 180, 31, 5, 5, 255, 245, 210);
-    // player platform and creature placeholder
+    SDL_Texture* enemy = sprites.get(25, "normal", "front");
+    if (enemy) {
+        sprites.draw(enemy, 157, 14, 40, 38);
+    } else {
+        fill(r, 162, 25, 28, 24, 225, 125, 75);
+        fill(r, 168, 31, 5, 5, 255, 245, 210);
+        fill(r, 180, 31, 5, 5, 255, 245, 210);
+    }
     fill(r, 18, 105, 85, 13, 115, 160, 105);
-    fill(r, 45, 76, 30, 28, 70, 115, 205);
-    fill(r, 51, 82, 5, 5, 255, 255, 255);
-    fill(r, 64, 82, 5, 5, 255, 255, 255);
+    SDL_Texture* player = sprites.get(1, "normal", "back");
+    if (player) {
+        sprites.draw(player, 38, 67, 44, 42);
+    } else {
+        fill(r, 45, 76, 30, 28, 70, 115, 205);
+        fill(r, 51, 82, 5, 5, 255, 255, 255);
+        fill(r, 64, 82, 5, 5, 255, 255, 255);
+    }
 
     // UI panels / HP bars
     fill(r, 8, 8, 94, 30, 248, 248, 225);
@@ -176,6 +187,7 @@ int main(int, char**) {
 
     Player player;
     ash_horizon::LivingWorld livingWorld;
+    ash_horizon::PokemonSpriteBank spriteBank(renderer);
     Mode mode = Mode::World;
     int playerHp = 20;
     int enemyHp = 20;
@@ -197,13 +209,12 @@ int main(int, char**) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT) running = false;
             if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat) {
-                const SDL_Keycode key = event.key.key;
-                if (key == SDLK_ESCAPE) running = false;
+                const SDL_Scancode key = event.key.scancode;
 
                 if (mode == Mode::Battle && now - lastAction > 160) {
-                    if (key == SDLK_UP || key == SDLK_DOWN) {
+                    if (key == SDL_SCANCODE_W || key == SDL_SCANCODE_S) {
                         menuSelection = 1 - menuSelection;
-                    } else if (key == SDLK_RETURN || key == SDLK_SPACE) {
+                    } else if (key == SDL_SCANCODE_E) {
                         lastAction = now;
                         if (menuSelection == 0) {
                             enemyHp = std::max(0, enemyHp - 5);
@@ -233,10 +244,10 @@ int main(int, char**) {
         if (mode == Mode::World) {
             const bool* keys = SDL_GetKeyboardState(nullptr);
             float dx = 0.0f, dy = 0.0f;
-            if (keys[SDL_SCANCODE_LEFT] || keys[SDL_SCANCODE_A]) { dx -= 1; player.direction = 2; }
-            if (keys[SDL_SCANCODE_RIGHT] || keys[SDL_SCANCODE_D]) { dx += 1; player.direction = 3; }
-            if (keys[SDL_SCANCODE_UP] || keys[SDL_SCANCODE_W]) { dy -= 1; player.direction = 1; }
-            if (keys[SDL_SCANCODE_DOWN] || keys[SDL_SCANCODE_S]) { dy += 1; player.direction = 0; }
+            if (keys[SDL_SCANCODE_A]) { dx -= 1; player.direction = 2; }
+            if (keys[SDL_SCANCODE_D]) { dx += 1; player.direction = 3; }
+            if (keys[SDL_SCANCODE_W]) { dy -= 1; player.direction = 1; }
+            if (keys[SDL_SCANCODE_S]) { dy += 1; player.direction = 0; }
 
             if (dx != 0.0f || dy != 0.0f) {
                 const float length = std::sqrt(dx * dx + dy * dy);
@@ -271,7 +282,7 @@ int main(int, char**) {
             }
             drawPlayer(renderer, player.x - cameraX, player.y - cameraY);
         } else {
-            drawBattle(renderer, playerHp, enemyHp, menuSelection);
+            drawBattle(renderer, playerHp, enemyHp, menuSelection, spriteBank);
         }
 
         SDL_RenderPresent(renderer);
