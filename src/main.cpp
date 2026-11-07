@@ -1,4 +1,5 @@
 #include <SDL3/SDL.h>
+#include "living_world.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -98,6 +99,27 @@ void drawPlayer(SDL_Renderer* r, float x, float y) {
     fill(r, x + 7, y + 14, 4, 2, 45, 45, 55);
 }
 
+void drawWildCreature(SDL_Renderer* r, const ash_horizon::WildCreature& c,
+                      int cameraX, int cameraY) {
+    const float x = c.x - cameraX;
+    const float y = c.y - cameraY;
+    Uint8 red = 105, green = 185, blue = 95;
+    if (c.species == 1) { red = 220; green = 105; blue = 65; }
+    if (c.species == 2) { red = 75; green = 155; blue = 215; }
+
+    const float bob = (c.mood == ash_horizon::WildMood::Rest)
+        ? 0.0f : std::sin(c.animationTime * 8.0f) * 1.2f;
+    fill(r, x + 2, y + 9 + bob, 12, 5, 45, 65, 55);
+    fill(r, x + 3, y + 3 + bob, 10, 9, red, green, blue);
+    fill(r, x + 5, y + 1 + bob, 6, 4, red, green, blue);
+    fill(r, x + 5, y + 6 + bob, 2, 2, 250, 250, 225);
+    fill(r, x + 10, y + 6 + bob, 2, 2, 250, 250, 225);
+    if (c.mood == ash_horizon::WildMood::Play) {
+        fill(r, x + 1, y + bob, 2, 2, 245, 225, 110);
+        fill(r, x + 14, y + 2 + bob, 2, 2, 245, 225, 110);
+    }
+}
+
 void drawBattle(SDL_Renderer* r, int hp, int enemyHp, int selected) {
     fill(r, 0, 0, SCREEN_W, SCREEN_H, 190, 220, 235);
     // distant hills
@@ -153,6 +175,7 @@ int main(int, char**) {
                                      SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
 
     Player player;
+    ash_horizon::LivingWorld livingWorld;
     Mode mode = Mode::World;
     int playerHp = 20;
     int enemyHp = 20;
@@ -237,11 +260,15 @@ int main(int, char**) {
         }
 
         if (mode == Mode::World) {
+            livingWorld.update(dt, player.x, player.y, blocked);
             const int cameraX = std::clamp(static_cast<int>(player.x) - SCREEN_W / 2,
                                            0, MAP_W * TILE - SCREEN_W);
             const int cameraY = std::clamp(static_cast<int>(player.y) - SCREEN_H / 2,
                                            0, MAP_H * TILE - SCREEN_H);
             drawMap(renderer, cameraX, cameraY);
+            for (const auto& creature : livingWorld.creatures()) {
+                drawWildCreature(renderer, creature, cameraX, cameraY);
+            }
             drawPlayer(renderer, player.x - cameraX, player.y - cameraY);
         } else {
             drawBattle(renderer, playerHp, enemyHp, menuSelection);
