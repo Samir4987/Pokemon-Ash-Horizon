@@ -39,7 +39,7 @@ public:
         // Try common sprite formats in a predictable order. BMP remains supported
         // for backwards compatibility with the original asset layout.
         static const char* extensions[] = {
-            ".png", ".bmp", ".webp", ".gif", ".jpg", ".jpeg",
+            ".png", ".bmp", ".webp", ".gif", ".jpg", ".jpeg", ".jfif",
             ".tga", ".qoi", ".tif", ".tiff", ".avif", ".jxl",
             ".svg", ".pnm", ".pcx", ".lbm", ".xpm", ".xcf", ".xv"
         };
