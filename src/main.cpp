@@ -1,5 +1,6 @@
 #include <SDL3/SDL.h>
 #include "living_world.hpp"
+#include "battle_system.hpp"
 #include "pokemon_sprite_bank.hpp"
 #include <algorithm>
 #include <array>
@@ -189,9 +190,7 @@ int main(int, char**) {
     ash_horizon::LivingWorld livingWorld;
     ash_horizon::PokemonSpriteBank spriteBank(renderer);
     Mode mode = Mode::World;
-    int playerHp = 20;
-    int enemyHp = 20;
-    int menuSelection = 0;
+    ash_horizon::BattleEngine battle;
     bool running = true;
     bool encounterReady = true;
     std::mt19937 rng(static_cast<unsigned int>(SDL_GetTicks()));
@@ -211,34 +210,20 @@ int main(int, char**) {
             if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat) {
                 const SDL_Scancode key = event.key.scancode;
 
-                if (mode == Mode::Battle && now - lastAction > 160) {
-                    if (key == SDL_SCANCODE_W || key == SDL_SCANCODE_S) {
-                        menuSelection = 1 - menuSelection;
-                    } else if (key == SDL_SCANCODE_E) {
+                if (mode == Mode::Battle && now - lastAction > 130) {
+                    if (key == SDL_SCANCODE_W) { battle.moveSelection(-2); lastAction = now; }
+                    else if (key == SDL_SCANCODE_S) { battle.moveSelection(2); lastAction = now; }
+                    else if (key == SDL_SCANCODE_A) { battle.moveSelection(-1); lastAction = now; }
+                    else if (key == SDL_SCANCODE_D) { battle.moveSelection(1); lastAction = now; }
+                    else if (key == SDL_SCANCODE_E) {
                         lastAction = now;
-                        if (menuSelection == 0) {
-                            enemyHp = std::max(0, enemyHp - 5);
-                            if (enemyHp > 0) playerHp = std::max(0, playerHp - 3);
-                        } else {
-                            mode = Mode::World;
-                            enemyHp = 20;
-                            lastEncounter = now;
-                        }
-                        if (enemyHp <= 0) {
-                            mode = Mode::World;
-                            enemyHp = 20;
-                            playerHp = 20;
-                            lastEncounter = now;
-                        }
-                        if (playerHp <= 0) {
-                            playerHp = 20;
-                            enemyHp = 20;
+                        if (battle.phase() == ash_horizon::BattlePhase::Finished) {
+                            battle.reset();
                             mode = Mode::World;
                             lastEncounter = now;
-                        }
+                        } else battle.chooseMove();
                     }
-                }
-            }
+                }            }
         }
 
         if (mode == Mode::World) {
@@ -262,13 +247,15 @@ int main(int, char**) {
                 if (tileAt(tx, ty) == 3 && encounterReady && now - lastEncounter > 900) {
                     if (encounterRoll(rng) < 2) {
                         mode = Mode::Battle;
-                        menuSelection = 0;
+                        battle.reset();
                         encounterReady = false;
                     }
                 }
             }
             if (now - lastEncounter > 1200) encounterReady = true;
         }
+
+        if (mode == Mode::Battle) battle.update(dt);
 
         if (mode == Mode::World) {
             livingWorld.update(dt, player.x, player.y, blocked);
@@ -282,7 +269,8 @@ int main(int, char**) {
             }
             drawPlayer(renderer, player.x - cameraX, player.y - cameraY);
         } else {
-            drawBattle(renderer, playerHp, enemyHp, menuSelection, spriteBank);
+            drawBattle(renderer, battle.playerHp() / 5, battle.enemyHp() / 5, battle.selectedMove() / 2, spriteBank);
+            battle.drawEffects(renderer);
         }
 
         SDL_RenderPresent(renderer);
