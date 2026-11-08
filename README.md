@@ -11,6 +11,8 @@ A small, original, GBA-inspired 2D Pokémon-style adventure prototype written in
 - Keyboard movement and collision
 - Random encounters while walking through tall grass
 - A simple turn-based battle prototype with Attack and Run
+- Standalone Pokémon stat and damage calculation core (IVs, EVs, nature, stat stages, STAB, type multiplier, random damage factor, and critical-hit modifier)
+- Automated battle-stat unit tests run in Windows CI
 - No external image or audio files are required yet
 
 ## Controls
@@ -34,14 +36,18 @@ The script uses `g++ -m32`; the compiler itself must have 32-bit MinGW-w64 suppo
 ## Project layout
 
 - `src/main.cpp` — game loop, map, movement, encounters, and battle
+- `src/battle_system.hpp` — battle flow, moves, friendship refusal, and attack effects
+- `src/battle_stats.hpp` — standalone Pokémon stat and damage calculation core
+- `tests/battle_stats_test.cpp` — unit tests for the stat calculation core
 - `build_32bit.bat` — Windows x86 build script
 - `assets/README.md` — notes for adding original pixel-art assets
 
 ## Next milestones
 
-1. Add original player and Pokémon sprites.
-2. Add dialogue boxes and a title screen.
-3. Add party, HP, and a Pokédex.
-4. Add maps, NPCs, and save data.
+1. Connect calculated Pokémon stats to the battle engine and replace placeholder combat values.
+2. Add the complete 18-type effectiveness chart and dual-type handling.
+3. Add status conditions, critical-hit rolls, and move effects.
+4. Add original player and Pokémon sprites.
+5. Add dialogue boxes, a title screen, party management, a Pokédex, maps, NPCs, and save data.
 
 This is an early playable prototype, not a complete Pokémon game.
