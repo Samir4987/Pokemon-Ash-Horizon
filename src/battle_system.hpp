@@ -48,7 +48,7 @@ public:
         selectedMove_ = 0;
         animationTime_ = 0.0f;
         animationDuration_ = 0.0f;
-        particles_.clear();
+        particleCount_ = 0;
         lastMessage_ = "Choose a move!";
     }
 
