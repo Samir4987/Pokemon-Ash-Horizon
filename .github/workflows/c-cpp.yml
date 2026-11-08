@@ -45,32 +45,42 @@ jobs:
           Invoke-WebRequest -Uri "https://github.com/libsdl-org/SDL/releases/download/release-3.4.20/SDL3-devel-3.4.20-mingw.zip" -OutFile $archive
           Expand-Archive -Path $archive -DestinationPath $destination -Force
 
+      - name: Download SDL3_image 3.4.8 MinGW development package
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP "SDL3_image-devel-mingw.tar.gz"
+          $destination = Join-Path $env:GITHUB_WORKSPACE "SDL3_image"
+          New-Item -ItemType Directory -Force -Path $destination | Out-Null
+          Invoke-WebRequest -Uri "https://github.com/libsdl-org/SDL_image/releases/download/release-3.4.8/SDL3_image-devel-3.4.8-mingw.tar.gz" -OutFile $archive
+          tar -xzf $archive -C $destination
+
       - name: Build game
         run: |
           set -euxo pipefail
 
-          echo "Locating SDL3 MinGW development files..."
           SDL_HEADER="$(find SDL3 -type f -path '*/include/SDL3/SDL.h' -print -quit)"
           SDL_IMPORT_LIB="$(find SDL3 -type f -name 'libSDL3.dll.a' -print -quit)"
           SDL_DLL="$(find SDL3 -type f -name 'SDL3.dll' -print -quit)"
+          IMG_HEADER="$(find SDL3_image -type f -path '*/include/SDL3_image/SDL_image.h' -print -quit)"
+          IMG_IMPORT_LIB="$(find SDL3_image -type f -name 'libSDL3_image.dll.a' -print -quit)"
+          IMG_DLL="$(find SDL3_image -type f -name 'SDL3_image.dll' -print -quit)"
 
-          if [ -z "$SDL_HEADER" ] || [ -z "$SDL_IMPORT_LIB" ] || [ -z "$SDL_DLL" ]; then
-            echo "ERROR: SDL3 x86 development header, import library, or runtime DLL was not found."
-            find SDL3 -maxdepth 7 -type f -print
+          if [ -z "$SDL_HEADER" ] || [ -z "$SDL_IMPORT_LIB" ] || [ -z "$SDL_DLL" ] || [ -z "$IMG_HEADER" ] || [ -z "$IMG_IMPORT_LIB" ] || [ -z "$IMG_DLL" ]; then
+            echo "ERROR: SDL3 or SDL3_image x86 development/runtime files were not found."
+            find SDL3 SDL3_image -maxdepth 8 -type f -print
             exit 1
           fi
 
           SDL_INCLUDE_DIR="$(dirname "$(dirname "$SDL_HEADER")")"
           SDL_LIB_DIR="$(dirname "$SDL_IMPORT_LIB")"
-
-          echo "SDL include: $SDL_INCLUDE_DIR"
-          echo "SDL library: $SDL_IMPORT_LIB"
-          echo "SDL runtime: $SDL_DLL"
+          IMG_INCLUDE_DIR="$(dirname "$(dirname "$IMG_HEADER")")"
+          IMG_LIB_DIR="$(dirname "$IMG_IMPORT_LIB")"
 
           g++ --version
-          g++ -std=c++17 -O2 -Wall -Wextra -static-libgcc -static-libstdc++ src/main.cpp -o PokemonAshHorizon.exe -I"$SDL_INCLUDE_DIR" -L"$SDL_LIB_DIR" -lSDL3
+          g++ -std=c++17 -O2 -Wall -Wextra -static-libgcc -static-libstdc++ src/main.cpp -o PokemonAshHorizon.exe -I"$SDL_INCLUDE_DIR" -I"$IMG_INCLUDE_DIR" -L"$SDL_LIB_DIR" -L"$IMG_LIB_DIR" -lSDL3_image -lSDL3
 
           cp "$SDL_DLL" ./SDL3.dll
+          cp "$IMG_DLL" ./SDL3_image.dll
 
       - name: Verify executable is 32-bit
         run: |
@@ -86,4 +96,5 @@ jobs:
           path: |
             PokemonAshHorizon.exe
             SDL3.dll
+            SDL3_image.dll
           if-no-files-found: error
