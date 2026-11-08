@@ -13,20 +13,21 @@ int main() {
     inputs.baseSpecialDefense = 100;
     inputs.baseSpeed = 100;
     inputs.ivs = {{31, 31, 31, 31, 31, 31}};
-    inputs.evs = {{252, 252, 252, 252, 252, 252}};
+    // A legal 504-EV spread: 252 Attack, 252 Speed.
+    inputs.evs = {{0, 252, 0, 0, 0, 252}};
 
     const BattleStats stats = calculateBattleStats(inputs);
-    assert(stats.hp == 207);
-    assert(stats.attack == 167);
-    assert(stats.defense == 167);
-    assert(stats.specialAttack == 167);
-    assert(stats.specialDefense == 167);
-    assert(stats.speed == 167);
+    assert(stats.hp == 175);
+    assert(stats.attack == 152);
+    assert(stats.defense == 120);
+    assert(stats.specialAttack == 120);
+    assert(stats.specialDefense == 120);
+    assert(stats.speed == 152);
 
     inputs.nature = {Stat::Attack, Stat::Speed};
     const BattleStats natureStats = calculateBattleStats(inputs);
-    assert(natureStats.attack == 183);
-    assert(natureStats.speed == 150);
+    assert(natureStats.attack == 167);
+    assert(natureStats.speed == 136);
 
     assert(applyStatStage(100, 2) == 200);
     assert(applyStatStage(100, -2) == 50);
