@@ -58,6 +58,15 @@ public:
     BattlePhase phase() const { return phase_; }
     const char* message() const { return lastMessage_; }
     const std::array<BattleMove, 4>& moves() const { return MOVES; }
+    int friendship() const { return friendship_; }
+    int refusalChance() const {
+        if (friendship_ > 84) return 0;
+        if (friendship_ >= 40) return 10;
+        return 60;
+    }
+    void setFriendship(int value) {
+        friendship_ = std::clamp(value, 0, 100);
+    }
 
     void moveSelection(int direction) {
         if (phase_ != BattlePhase::PlayerChoice) return;
@@ -66,8 +75,13 @@ public:
 
     void chooseMove() {
         if (phase_ != BattlePhase::PlayerChoice) return;
-        const BattleMove& move = MOVES[static_cast<std::size_t>(selectedMove_)];
         std::uniform_int_distribution<int> roll(1, 100);
+        if (refusalChance() > 0 && roll(rng_) <= refusalChance()) {
+            lastMessage_ = "Your Pokemon refused to attack!";
+            phase_ = BattlePhase::EnemyTurn;
+            return;
+        }
+        const BattleMove& move = MOVES[static_cast<std::size_t>(selectedMove_)];
         if (roll(rng_) > move.accuracy) {
             lastMessage_ = "The attack missed!";
             phase_ = BattlePhase::EnemyTurn;
@@ -102,7 +116,9 @@ public:
     }
 
     void drawEffects(SDL_Renderer* renderer) const {
-        for (const auto& p : particles_) {
+        for (std::size_t i = 0; i < particleCount_; ++i) {
+            const auto& p = particles_[i];
+            if (p.maxLife <= 0.0f) continue;
             const float alpha = std::clamp(p.life / p.maxLife, 0.0f, 1.0f);
             SDL_SetRenderDrawColor(renderer, p.r, p.g, p.b,
                                    static_cast<Uint8>(255.0f * alpha));
@@ -120,6 +136,7 @@ private:
     int playerHp_ = MAX_HP;
     int enemyHp_ = MAX_HP;
     int selectedMove_ = 0;
+    int friendship_ = 100;
     BattlePhase phase_ = BattlePhase::PlayerChoice;
     float animationTime_ = 0.0f;
     float animationDuration_ = 0.55f;
