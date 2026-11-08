@@ -13,7 +13,7 @@ A small, original, GBA-inspired 2D Pokémon-style adventure prototype written in
 - A simple turn-based battle prototype with Attack and Run
 - Standalone Pokémon stat and damage calculation core (IVs, EVs, nature, stat stages, STAB, type multiplier, random damage factor, and critical-hit modifier)
 - Automated battle-stat unit tests run in Windows CI
-- No external image or audio files are required yet
+- Lazy-loaded Pokémon sprite bank with SDL3_image support for common image formats (PNG, BMP, JPEG, GIF, WebP, TGA, TIFF, QOI, and other formats enabled by the SDL3_image build)
 
 ## Controls
 
@@ -26,10 +26,10 @@ A small, original, GBA-inspired 2D Pokémon-style adventure prototype written in
 This project targets 32-bit Windows (x86) and SDL3.
 
 1. Install an **i686 MinGW-w64** C++ compiler.
-2. Download the SDL3 **Win32 / x86 development package**.
-3. Edit `build_32bit.bat` and set `SDL_DIR` to the folder containing SDL3's `include` and `lib` directories.
+2. Download the SDL3 **Win32 / x86 development package** and the matching SDL3_image **32-bit MinGW development package**.
+3. Edit `build_32bit.bat` and set `SDL_DIR` and `SDL_IMAGE_DIR` to the folders containing each library's `include`, `lib`, and `bin` directories.
 4. Run `build_32bit.bat`.
-5. Copy `SDL3.dll` from SDL3's `bin` folder beside `PokemonAshHorizon.exe`, then run the EXE.
+5. Keep both `SDL3.dll` and `SDL3_image.dll` beside `PokemonAshHorizon.exe`, then run the EXE.
 
 The script uses `g++ -m32`; the compiler itself must have 32-bit MinGW-w64 support. If your SDL package has a different folder layout, adjust the paths in the script.
 
@@ -40,6 +40,7 @@ The script uses `g++ -m32`; the compiler itself must have 32-bit MinGW-w64 suppo
 - `src/battle_stats.hpp` — standalone Pokémon stat and damage calculation core
 - `tests/battle_stats_test.cpp` — unit tests for the stat calculation core
 - `build_32bit.bat` — Windows x86 build script
+- `src/pokemon_sprite_bank.hpp` — lazy sprite loading with common image-format support
 - `assets/README.md` — notes for adding original pixel-art assets
 
 ## Next milestones
