@@ -269,7 +269,7 @@ int main(int, char**) {
             }
             drawPlayer(renderer, player.x - cameraX, player.y - cameraY);
         } else {
-            drawBattle(renderer, battle.playerHp() / 5, battle.enemyHp() / 5, battle.selectedMove() / 2, spriteBank);
+            drawBattle(renderer, battle.playerHpBar(), battle.enemyHpBar(), battle.selectedMove() / 2, spriteBank);
             battle.drawEffects(renderer);
         }
 
