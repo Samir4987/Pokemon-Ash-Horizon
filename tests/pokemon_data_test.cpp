@@ -8,14 +8,15 @@ int main() {
     PokemonDatabase db;
     std::istringstream source(
         "ASHDEX\t1\n"
-        "1\tBulbasaur\tgrass\tpoison\t45\t49\t49\t65\t65\t45\n"
-        "2\tIvysaur\tgrass\tpoison\t60\t62\t63\t80\t80\t60\n"
-        "3\tVenusaur\tgrass\tpoison\t80\t82\t83\t100\t100\t80\n");
+        "1\tBulbasaur\tgrass\tpoison\t45\t49\t49\t65\t65\t45\t1\n"
+        "2\tIvysaur\tgrass\tpoison\t60\t62\t63\t80\t80\t60\t1\n"
+        "3\tVenusaur\tgrass\tpoison\t80\t82\t83\t100\t100\t80\t1\n");
     std::string error;
     assert(db.loadSpeciesTsv(source, &error));
     assert(db.species().size() == 3);
     assert(db.findSpecies(1) != nullptr);
-    assert(db.findSpecies(1)->baseStats.hp == 45);\n    assert(db.findSpecies(1)->generation == 1);
+    assert(db.findSpecies(1)->baseStats.hp == 45);
+    assert(db.findSpecies(1)->generation == 1);
     assert(db.findSpecies(99) == nullptr);
 
     FormRecord regional;
