@@ -37,6 +37,12 @@ jobs:
           g++ -std=c++17 -O2 -Wall -Wextra tests/battle_stats_test.cpp -o battle_stats_test.exe
           ./battle_stats_test.exe
 
+      - name: Run Pokédex data unit tests
+        run: |
+          set -euxo pipefail
+          g++ -std=c++17 -O2 -Wall -Wextra tests/pokemon_data_test.cpp -o pokemon_data_test.exe
+          ./pokemon_data_test.exe
+
       - name: Download SDL3 3.4.20 MinGW development package (x86)
         shell: pwsh
         run: |
