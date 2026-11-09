@@ -57,7 +57,7 @@ public:
     }};
 
     BattleEngine() : rng_(0xA5A2026u) {
-        // Temporary battle data until encounters are connected to the Pokédex.
+        // Temporary encounter data until wild encounters load Pokédex records.
         player_.inputs.level = 20;
         player_.inputs.baseHp = 45;
         player_.inputs.baseAttack = 49;
@@ -118,7 +118,7 @@ public:
         friendship_ = std::clamp(value, 0, 100);
     }
 
-    // Encounter code can supply actual Pokédex stats and types here.
+    // Encounter code supplies real Pokédex stats and types through these setters.
     void setPlayerPokemon(const StatInputs& inputs, BattleType primary,
                           BattleType secondary = BattleType::Normal,
                           bool hasSecondary = false) {
@@ -161,18 +161,19 @@ public:
         }
 
         const float multiplier = effectiveness(move.type, enemy_);
-        const int damage = resolveDamage(move, player_, enemy_, multiplier);
+        std::uniform_int_distribution<int> randomRoll(85, 100);
+        const float randomFactor = static_cast<float>(randomRoll(rng_)) / 100.0f;
+        std::uniform_int_distribution<int> criticalRoll(1, 24);
+        const bool critical = criticalRoll(rng_) == 1;
+        const int damage = resolveDamage(move, player_, enemy_, multiplier,
+                                         critical, randomFactor);
         enemy_.hp = std::max(0, enemy_.hp - damage);
 
-        if (multiplier == 0.0f) {
-            lastMessage_ = "It had no effect!";
-        } else if (multiplier > 1.0f) {
-            lastMessage_ = "It's super effective!";
-        } else if (multiplier < 1.0f) {
-            lastMessage_ = "It's not very effective...";
-        } else {
-            lastMessage_ = "Direct hit!";
-        }
+        if (multiplier == 0.0f) lastMessage_ = "It had no effect!";
+        else if (critical) lastMessage_ = "A critical hit!";
+        else if (multiplier > 1.0f) lastMessage_ = "It's super effective!";
+        else if (multiplier < 1.0f) lastMessage_ = "It's not very effective...";
+        else lastMessage_ = "Direct hit!";
 
         if (damage > 0) startAnimation(move.type);
         if (enemy_.hp == 0) {
@@ -243,14 +244,12 @@ private:
                              float randomFactor = 1.0f) {
         if (move.category == MoveClass::Status || move.power <= 0 || multiplier <= 0.0f)
             return 0;
-
         const bool stab = move.type == attacker.primaryType ||
             (attacker.hasSecondaryType && move.type == attacker.secondaryType);
         const int attack = move.category == MoveClass::Physical
             ? attacker.stats.attack : attacker.stats.specialAttack;
         const int defense = move.category == MoveClass::Physical
             ? defender.stats.defense : defender.stats.specialDefense;
-
         return calculateDamage(attacker.inputs.level, move.power, attack, defense,
                                stab, multiplier, randomFactor, critical);
     }
