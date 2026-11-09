@@ -189,7 +189,12 @@ public:
                     return false;
                 }
             }
-            unsigned long generation = 0;\n            if (!parseUnsigned(fields[10], generation) || generation < 1 || generation > 9) {\n                setLineError(error, lineNumber, "generation must be between 1 and 9");\n                return false;\n            }\n            if (values[0] == 0 || values[0] > 1025 ||
+            unsigned long generation = 0;
+            if (!parseUnsigned(fields[10], generation) || generation < 1 || generation > 9) {
+                setLineError(error, lineNumber, "generation must be between 1 and 9");
+                return false;
+            }
+            if (values[0] == 0 || values[0] > 1025 ||
                 values[1] > 255 || values[2] > 255 || values[3] > 255 ||
                 values[4] > 255 || values[5] > 255 || values[6] > 255) {
                 setLineError(error, lineNumber, "numeric field out of range");
@@ -204,6 +209,7 @@ public:
             SpeciesRecord record;
             record.nationalDex = static_cast<std::uint16_t>(values[0]);
             record.name = fields[1];
+            record.generation = static_cast<std::uint8_t>(generation);
             record.type1 = type1;
             record.type2 = type2;
             record.baseStats = {
