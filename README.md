@@ -37,7 +37,7 @@ The script uses `g++ -m32`; the compiler itself must have 32-bit MinGW-w64 suppo
 
 - `src/main.cpp` — game loop, map, movement, encounters, and battle
 - `src/battle_system.hpp` — battle flow, moves, friendship refusal, and attack effects
-- `src/battle_stats.hpp` — standalone Pokémon stat and damage calculation core
+- `src/battle_stats.hpp` — standalone Pokémon stat and damage calculation core\n- `src/pokemon_data.hpp` — lightweight species, form, evolution, and local TSV data-loading foundation\n- `tests/pokemon_data_test.cpp` — Pokédex data validation and loader tests
 - `tests/battle_stats_test.cpp` — unit tests for the stat calculation core
 - `build_32bit.bat` — Windows x86 build script
 - `src/pokemon_sprite_bank.hpp` — lazy sprite loading with common image-format support
@@ -45,10 +45,10 @@ The script uses `g++ -m32`; the compiler itself must have 32-bit MinGW-w64 suppo
 
 ## Next milestones
 
-1. Connect calculated Pokémon stats to the battle engine and replace placeholder combat values.
-2. Add the complete 18-type effectiveness chart and dual-type handling.
-3. Add status conditions, critical-hit rolls, and move effects.
-4. Add original player and Pokémon sprites.
-5. Add dialogue boxes, a title screen, party management, a Pokédex, maps, NPCs, and save data.
+1. Populate the Pokédex data pack with verified Gen 1–9 species, forms, and evolution records.\n2. Connect calculated Pokémon stats to the battle engine and replace placeholder combat values.
+3. Add the complete 18-type effectiveness chart and dual-type handling.
+4. Add status conditions, critical-hit rolls, and move effects.
+5. Add original player and Pokémon sprites.
+6. Add dialogue boxes, a title screen, party management, maps, NPCs, and save data.
 
 This is an early playable prototype, not a complete Pokémon game.
