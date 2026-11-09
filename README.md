@@ -45,7 +45,8 @@ The script uses `g++ -m32`; the compiler itself must have 32-bit MinGW-w64 suppo
 
 ## Next milestones
 
-1. Populate the Pokédex data pack with verified Gen 1–9 species, forms, and evolution records.\n2. Connect calculated Pokémon stats to the battle engine and replace placeholder combat values.
+1. Populate the Pokédex data pack with verified Gen 1–9 species, forms, and evolution records.
+2. Connect calculated Pokémon stats to the battle engine and replace placeholder combat values.
 3. Add the complete 18-type effectiveness chart and dual-type handling.
 4. Add status conditions, critical-hit rolls, and move effects.
 5. Add original player and Pokémon sprites.
