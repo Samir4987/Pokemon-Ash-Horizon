@@ -15,7 +15,7 @@ int main() {
     assert(db.loadSpeciesTsv(source, &error));
     assert(db.species().size() == 3);
     assert(db.findSpecies(1) != nullptr);
-    assert(db.findSpecies(1)->baseStats.hp == 45);
+    assert(db.findSpecies(1)->baseStats.hp == 45);\n    assert(db.findSpecies(1)->generation == 1);
     assert(db.findSpecies(99) == nullptr);
 
     FormRecord regional;
