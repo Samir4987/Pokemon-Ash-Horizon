@@ -1,6 +1,9 @@
 #pragma once
 
 #include <SDL3/SDL.h>
+#include "battle_stats.hpp"
+#include "type_chart.hpp"
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -8,11 +11,6 @@
 #include <random>
 
 namespace ash_horizon {
-
-enum class BattleType : std::uint8_t {
-    Normal, Fire, Water, Electric, Grass, Ice, Fighting, Poison, Ground,
-    Flying, Psychic, Bug, Rock, Ghost, Dragon, Dark, Steel, Fairy
-};
 
 enum class MoveClass : std::uint8_t { Physical, Special, Status };
 enum class BattlePhase : std::uint8_t { PlayerChoice, AttackAnimation, EnemyTurn, Finished };
@@ -30,9 +28,27 @@ struct BattleParticle {
     std::uint8_t r, g, b;
 };
 
+struct BattleCombatant {
+    StatInputs inputs{};
+    BattleStats stats{};
+    BattleType primaryType = BattleType::Normal;
+    BattleType secondaryType = BattleType::Normal;
+    bool hasSecondaryType = false;
+    int hp = 1;
+
+    void recalculate() {
+        stats = calculateBattleStats(inputs);
+        hp = std::clamp(hp, 0, stats.hp);
+    }
+
+    void restore() {
+        stats = calculateBattleStats(inputs);
+        hp = stats.hp;
+    }
+};
+
 class BattleEngine {
 public:
-    static constexpr int MAX_HP = 100;
     static constexpr std::array<BattleMove, 4> MOVES{{
         {"Tackle", BattleType::Normal, MoveClass::Physical, 40, 100},
         {"Ember", BattleType::Fire, MoveClass::Special, 40, 100},
@@ -40,10 +56,38 @@ public:
         {"Thunder Shock", BattleType::Electric, MoveClass::Special, 40, 100}
     }};
 
-    BattleEngine() : rng_(0xA5A2026u) { reset(); }
+    BattleEngine() : rng_(0xA5A2026u) {
+        // Temporary battle data until encounters are connected to the Pokédex.
+        player_.inputs.level = 20;
+        player_.inputs.baseHp = 45;
+        player_.inputs.baseAttack = 49;
+        player_.inputs.baseDefense = 49;
+        player_.inputs.baseSpecialAttack = 65;
+        player_.inputs.baseSpecialDefense = 65;
+        player_.inputs.baseSpeed = 45;
+        player_.inputs.ivs = {{31, 31, 31, 31, 31, 31}};
+        player_.primaryType = BattleType::Grass;
+        player_.secondaryType = BattleType::Poison;
+        player_.hasSecondaryType = true;
+
+        enemy_.inputs.level = 20;
+        enemy_.inputs.baseHp = 35;
+        enemy_.inputs.baseAttack = 55;
+        enemy_.inputs.baseDefense = 40;
+        enemy_.inputs.baseSpecialAttack = 50;
+        enemy_.inputs.baseSpecialDefense = 50;
+        enemy_.inputs.baseSpeed = 90;
+        enemy_.inputs.ivs = {{31, 31, 31, 31, 31, 31}};
+        enemy_.primaryType = BattleType::Electric;
+
+        player_.restore();
+        enemy_.restore();
+        reset();
+    }
 
     void reset() {
-        playerHp_ = enemyHp_ = MAX_HP;
+        player_.restore();
+        enemy_.restore();
         phase_ = BattlePhase::PlayerChoice;
         selectedMove_ = 0;
         animationTime_ = 0.0f;
@@ -52,20 +96,47 @@ public:
         lastMessage_ = "Choose a move!";
     }
 
-    int playerHp() const { return playerHp_; }
-    int enemyHp() const { return enemyHp_; }
+    int playerHp() const { return player_.hp; }
+    int enemyHp() const { return enemy_.hp; }
+    int playerMaxHp() const { return player_.stats.hp; }
+    int enemyMaxHp() const { return enemy_.stats.hp; }
+    int playerHpBar() const { return hpBar(player_); }
+    int enemyHpBar() const { return hpBar(enemy_); }
     int selectedMove() const { return selectedMove_; }
     BattlePhase phase() const { return phase_; }
     const char* message() const { return lastMessage_; }
     const std::array<BattleMove, 4>& moves() const { return MOVES; }
     int friendship() const { return friendship_; }
+
     int refusalChance() const {
         if (friendship_ > 84) return 0;
         if (friendship_ >= 40) return 10;
         return 60;
     }
+
     void setFriendship(int value) {
         friendship_ = std::clamp(value, 0, 100);
+    }
+
+    // Encounter code can supply actual Pokédex stats and types here.
+    void setPlayerPokemon(const StatInputs& inputs, BattleType primary,
+                          BattleType secondary = BattleType::Normal,
+                          bool hasSecondary = false) {
+        player_.inputs = inputs;
+        player_.primaryType = primary;
+        player_.secondaryType = secondary;
+        player_.hasSecondaryType = hasSecondary;
+        player_.restore();
+    }
+
+    void setEnemyPokemon(const StatInputs& inputs, BattleType primary,
+                         BattleType secondary = BattleType::Normal,
+                         bool hasSecondary = false) {
+        enemy_.inputs = inputs;
+        enemy_.primaryType = primary;
+        enemy_.secondaryType = secondary;
+        enemy_.hasSecondaryType = hasSecondary;
+        enemy_.restore();
     }
 
     void moveSelection(int direction) {
@@ -81,24 +152,34 @@ public:
             phase_ = BattlePhase::EnemyTurn;
             return;
         }
+
         const BattleMove& move = MOVES[static_cast<std::size_t>(selectedMove_)];
-        if (roll(rng_) > move.accuracy) {
+        if (roll(rng_) > std::clamp(move.accuracy, 1, 100)) {
             lastMessage_ = "The attack missed!";
             phase_ = BattlePhase::EnemyTurn;
             return;
         }
-        const float multiplier = effectiveness(move.type, BattleType::Normal);
-        const int damage = std::max(1, static_cast<int>(
-            (static_cast<float>(move.power) * multiplier) / 10.0f));
-        enemyHp_ = std::max(0, enemyHp_ - damage);
-        lastMessage_ = multiplier > 1.0f ? "It's super effective!" :
-                       multiplier < 1.0f ? "It's not very effective..." : "Direct hit!";
-        startAnimation(move.type);
-        if (enemyHp_ == 0) {
+
+        const float multiplier = effectiveness(move.type, enemy_);
+        const int damage = resolveDamage(move, player_, enemy_, multiplier);
+        enemy_.hp = std::max(0, enemy_.hp - damage);
+
+        if (multiplier == 0.0f) {
+            lastMessage_ = "It had no effect!";
+        } else if (multiplier > 1.0f) {
+            lastMessage_ = "It's super effective!";
+        } else if (multiplier < 1.0f) {
+            lastMessage_ = "It's not very effective...";
+        } else {
+            lastMessage_ = "Direct hit!";
+        }
+
+        if (damage > 0) startAnimation(move.type);
+        if (enemy_.hp == 0) {
             phase_ = BattlePhase::Finished;
             lastMessage_ = "You won the battle!";
         } else {
-            phase_ = BattlePhase::AttackAnimation;
+            phase_ = damage > 0 ? BattlePhase::AttackAnimation : BattlePhase::EnemyTurn;
         }
     }
 
@@ -133,8 +214,8 @@ public:
     }
 
 private:
-    int playerHp_ = MAX_HP;
-    int enemyHp_ = MAX_HP;
+    BattleCombatant player_{};
+    BattleCombatant enemy_{};
     int selectedMove_ = 0;
     int friendship_ = 100;
     BattlePhase phase_ = BattlePhase::PlayerChoice;
@@ -145,39 +226,33 @@ private:
     std::size_t particleCount_ = 0;
     std::mt19937 rng_;
 
-    static float effectiveness(BattleType attack, BattleType defend) {
-        // First-pass core chart; expanded to the complete 18-type matrix next.
-        if (defend == BattleType::Normal) {
-            if (attack == BattleType::Fighting) return 2.0f;
-            if (attack == BattleType::Ghost) return 0.0f;
-        }
-        if (defend == BattleType::Fire) {
-            if (attack == BattleType::Water || attack == BattleType::Ground ||
-                attack == BattleType::Rock) return 2.0f;
-            if (attack == BattleType::Fire || attack == BattleType::Grass ||
-                attack == BattleType::Ice || attack == BattleType::Bug ||
-                attack == BattleType::Steel || attack == BattleType::Fairy) return 0.5f;
-        }
-        if (defend == BattleType::Water) {
-            if (attack == BattleType::Electric || attack == BattleType::Grass) return 2.0f;
-            if (attack == BattleType::Fire || attack == BattleType::Water ||
-                attack == BattleType::Ice || attack == BattleType::Steel) return 0.5f;
-        }
-        if (defend == BattleType::Grass) {
-            if (attack == BattleType::Fire || attack == BattleType::Ice ||
-                attack == BattleType::Poison || attack == BattleType::Flying ||
-                attack == BattleType::Bug) return 2.0f;
-            if (attack == BattleType::Water || attack == BattleType::Electric ||
-                attack == BattleType::Grass || attack == BattleType::Ground) return 0.5f;
-        }
-        if (defend == BattleType::Ground && attack == BattleType::Electric) return 0.0f;
-        if (defend == BattleType::Flying && attack == BattleType::Ground) return 0.0f;
-        if (defend == BattleType::Electric) {
-            if (attack == BattleType::Ground) return 2.0f;
-            if (attack == BattleType::Electric || attack == BattleType::Flying ||
-                attack == BattleType::Steel) return 0.5f;
-        }
-        return 1.0f;
+    static int hpBar(const BattleCombatant& pokemon) {
+        if (pokemon.stats.hp <= 0) return 0;
+        return std::clamp(pokemon.hp * 20 / pokemon.stats.hp, 0, 20);
+    }
+
+    static float effectiveness(BattleType attack, const BattleCombatant& defender) {
+        return typeEffectiveness(attack, defender.primaryType,
+                                 defender.secondaryType, defender.hasSecondaryType);
+    }
+
+    static int resolveDamage(const BattleMove& move,
+                             const BattleCombatant& attacker,
+                             const BattleCombatant& defender,
+                             float multiplier, bool critical = false,
+                             float randomFactor = 1.0f) {
+        if (move.category == MoveClass::Status || move.power <= 0 || multiplier <= 0.0f)
+            return 0;
+
+        const bool stab = move.type == attacker.primaryType ||
+            (attacker.hasSecondaryType && move.type == attacker.secondaryType);
+        const int attack = move.category == MoveClass::Physical
+            ? attacker.stats.attack : attacker.stats.specialAttack;
+        const int defense = move.category == MoveClass::Physical
+            ? defender.stats.defense : defender.stats.specialDefense;
+
+        return calculateDamage(attacker.inputs.level, move.power, attack, defense,
+                               stab, multiplier, randomFactor, critical);
     }
 
     void startAnimation(BattleType type) {
@@ -210,9 +285,31 @@ private:
 
     void enemyAttack() {
         if (phase_ == BattlePhase::Finished) return;
-        playerHp_ = std::max(0, playerHp_ - 8);
-        lastMessage_ = playerHp_ == 0 ? "Your Pokemon fainted!" : "The opponent attacked!";
-        phase_ = playerHp_ == 0 ? BattlePhase::Finished : BattlePhase::PlayerChoice;
+        static const BattleMove enemyMove{
+            "Thunder Shock", BattleType::Electric, MoveClass::Special, 40, 100
+        };
+        std::uniform_int_distribution<int> accuracyRoll(1, 100);
+        if (accuracyRoll(rng_) > enemyMove.accuracy) {
+            lastMessage_ = "The opponent's attack missed!";
+            phase_ = BattlePhase::PlayerChoice;
+            return;
+        }
+
+        const float multiplier = effectiveness(enemyMove.type, player_);
+        std::uniform_int_distribution<int> randomRoll(85, 100);
+        const float randomFactor = static_cast<float>(randomRoll(rng_)) / 100.0f;
+        std::uniform_int_distribution<int> criticalRoll(1, 24);
+        const bool critical = criticalRoll(rng_) == 1;
+        const int damage = resolveDamage(enemyMove, enemy_, player_, multiplier,
+                                         critical, randomFactor);
+        player_.hp = std::max(0, player_.hp - damage);
+
+        if (multiplier == 0.0f) lastMessage_ = "Your Pokemon was unaffected!";
+        else if (critical) lastMessage_ = "A critical hit!";
+        else lastMessage_ = "The opponent attacked!";
+
+        phase_ = player_.hp == 0 ? BattlePhase::Finished : BattlePhase::PlayerChoice;
+        if (phase_ == BattlePhase::Finished) lastMessage_ = "Your Pokemon fainted!";
     }
 };
 
