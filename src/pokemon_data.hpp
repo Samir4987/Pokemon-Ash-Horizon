@@ -161,7 +161,7 @@ public:
         while (std::getline(input, line)) {
             ++lineNumber;
             if (line.empty() || line[0] == '#') continue;
-            std::array<std::string, 10> fields{};
+            std::array<std::string, 11> fields{};
             std::size_t start = 0;
             bool validFields = true;
             for (std::size_t i = 0; i < fields.size(); ++i) {
@@ -180,7 +180,7 @@ public:
             }
             unsigned long values[7]{};
             if (!validFields || fields[1].empty()) {
-                setLineError(error, lineNumber, "expected exactly 10 fields and a name");
+                setLineError(error, lineNumber, "expected exactly 11 fields and a name");
                 return false;
             }
             for (std::size_t i = 0; i < 7; ++i) {
@@ -189,7 +189,7 @@ public:
                     return false;
                 }
             }
-            if (values[0] == 0 || values[0] > 1025 ||
+            unsigned long generation = 0;\n            if (!parseUnsigned(fields[10], generation) || generation < 1 || generation > 9) {\n                setLineError(error, lineNumber, "generation must be between 1 and 9");\n                return false;\n            }\n            if (values[0] == 0 || values[0] > 1025 ||
                 values[1] > 255 || values[2] > 255 || values[3] > 255 ||
                 values[4] > 255 || values[5] > 255 || values[6] > 255) {
                 setLineError(error, lineNumber, "numeric field out of range");
