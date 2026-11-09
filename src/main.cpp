@@ -151,11 +151,26 @@ void drawBattle(SDL_Renderer* r, int hp, int enemyHp, int selected,
     // UI panels / HP bars
     fill(r, 8, 8, 94, 30, 248, 248, 225);
     fill(r, 8, 8, 94, 2, 45, 65, 65);
-    fill(r, 142, 88, 90, 28, 248, 248, 225);
-    fill(r, 150, 100, 72, 5, 70, 70, 70);
-    fill(r, 150, 100, 72 * std::max(0, enemyHp) / 20, 5, 70, 190, 90);
+    drawPixelText(r, 14, 13, "LV");
+    char enemyHpText[24];
+    SDL_snprintf(enemyHpText, sizeof(enemyHpText), "%d", enemyLevel);
+    drawPixelText(r, 26, 13, enemyHpText);
+    drawPixelText(r, 48, 13, "HP");
+    SDL_snprintf(enemyHpText, sizeof(enemyHpText), "%d/%d", enemyHp, enemyMaxHp);
+    drawPixelText(r, 58, 13, enemyHpText);
     fill(r, 16, 23, 72, 5, 70, 70, 70);
-    fill(r, 16, 23, 72 * std::max(0, hp) / 20, 5, 70, 190, 90);
+    fill(r, 16, 23, 72 * std::max(0, enemyHp) / std::max(1, enemyMaxHp), 5, 70, 190, 90);
+
+    fill(r, 142, 88, 90, 28, 248, 248, 225);
+    drawPixelText(r, 148, 91, "LV");
+    char playerHpText[24];
+    SDL_snprintf(playerHpText, sizeof(playerHpText), "%d", level);
+    drawPixelText(r, 160, 91, playerHpText);
+    drawPixelText(r, 148, 100, "HP");
+    SDL_snprintf(playerHpText, sizeof(playerHpText), "%d/%d", hp, maxHp);
+    drawPixelText(r, 160, 100, playerHpText);
+    fill(r, 150, 109, 72, 4, 70, 70, 70);
+    fill(r, 150, 109, 72 * std::max(0, hp) / std::max(1, maxHp), 4, 70, 190, 90);
 
     fill(r, 8, 123, 224, 33, 30, 45, 75);
     fill(r, 10, 125, 220, 29, 245, 245, 230);
@@ -269,7 +284,9 @@ int main(int, char**) {
             }
             drawPlayer(renderer, player.x - cameraX, player.y - cameraY);
         } else {
-            drawBattle(renderer, battle.playerHpBar(), battle.enemyHpBar(), battle.selectedMove() / 2, spriteBank);
+            drawBattle(renderer, battle.playerHp(), battle.playerMaxHp(), battle.playerLevel(),
+                       battle.enemyHp(), battle.enemyMaxHp(), battle.enemyLevel(),
+                       battle.selectedMove() / 2, spriteBank);
             battle.drawEffects(renderer);
         }
 
