@@ -100,6 +100,8 @@ public:
     int enemyHp() const { return enemy_.hp; }
     int playerMaxHp() const { return player_.stats.hp; }
     int enemyMaxHp() const { return enemy_.stats.hp; }
+    int playerLevel() const { return player_.inputs.level; }
+    int enemyLevel() const { return enemy_.inputs.level; }
     int playerHpBar() const { return hpBar(player_); }
     int enemyHpBar() const { return hpBar(enemy_); }
     int selectedMove() const { return selectedMove_; }
