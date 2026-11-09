@@ -37,7 +37,9 @@ The script uses `g++ -m32`; the compiler itself must have 32-bit MinGW-w64 suppo
 
 - `src/main.cpp` — game loop, map, movement, encounters, and battle
 - `src/battle_system.hpp` — battle flow, moves, friendship refusal, and attack effects
-- `src/battle_stats.hpp` — standalone Pokémon stat and damage calculation core\n- `src/pokemon_data.hpp` — lightweight species, form, evolution, and local TSV data-loading foundation\n- `tests/pokemon_data_test.cpp` — Pokédex data validation and loader tests
+- `src/battle_stats.hpp` — standalone Pokémon stat and damage calculation core
+- `src/pokemon_data.hpp` — lightweight species, form, evolution, and local TSV data-loading foundation
+- `tests/pokemon_data_test.cpp` — Pokédex data validation and loader tests
 - `tests/battle_stats_test.cpp` — unit tests for the stat calculation core
 - `build_32bit.bat` — Windows x86 build script
 - `src/pokemon_sprite_bank.hpp` — lazy sprite loading with common image-format support
