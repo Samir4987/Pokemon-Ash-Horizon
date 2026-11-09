@@ -148,8 +148,8 @@ public:
         return false;
     }
 
-    // File format: first line "ASHDEX<TAB>1"; then ten tab-separated fields:
-    // dex, name, type1, type2 (or "-"), HP, Atk, Def, SpA, SpD, Spe.
+    // File format: first line "ASHDEX<TAB>1"; then eleven tab-separated fields:
+    // dex, name, type1, type2 (or "-"), HP, Atk, Def, SpA, SpD, Spe, generation.
     // The loader is bounded by the supplied stream and uses no third-party parser.
     bool loadSpeciesTsv(std::istream& input, std::string* error = nullptr) {
         std::string line;
