@@ -122,7 +122,46 @@ void drawWildCreature(SDL_Renderer* r, const ash_horizon::WildCreature& c,
     }
 }
 
-void drawBattle(SDL_Renderer* r, int hp, int enemyHp, int selected,
+// Compact 3x5 bitmap font for the battle HUD. Keeping this local avoids
+// adding SDL_ttf or another runtime dependency to the 32-bit build.
+void drawPixelText(SDL_Renderer* r, int x, int y, const char* text) {
+    auto glyph = [](char c) -> std::array<std::uint8_t, 5> {
+        switch (c) {
+        case '0': return {{7, 5, 5, 5, 7}};
+        case '1': return {{2, 6, 2, 2, 7}};
+        case '2': return {{7, 1, 7, 4, 7}};
+        case '3': return {{7, 1, 7, 1, 7}};
+        case '4': return {{5, 5, 7, 1, 1}};
+        case '5': return {{7, 4, 7, 1, 7}};
+        case '6': return {{7, 4, 7, 5, 7}};
+        case '7': return {{7, 1, 1, 1, 1}};
+        case '8': return {{7, 5, 7, 5, 7}};
+        case '9': return {{7, 5, 7, 1, 7}};
+        case '/': return {{1, 1, 2, 4, 4}};
+        case 'L': return {{4, 4, 4, 4, 7}};
+        case 'V': return {{5, 5, 5, 5, 2}};
+        case 'H': return {{5, 5, 7, 5, 5}};
+        case 'P': return {{6, 5, 6, 4, 4}};
+        default:  return {{0, 0, 0, 0, 0}};
+        }
+    };
+    SDL_SetRenderDrawColor(r, 35, 45, 55, 255);
+    for (const char* p = text; *p; ++p, x += 4) {
+        const auto rows = glyph(*p);
+        for (int row = 0; row < 5; ++row) {
+            for (int col = 0; col < 3; ++col) {
+                if ((rows[static_cast<std::size_t>(row)] & (1u << (2 - col))) != 0) {
+                    SDL_FRect pixel{static_cast<float>(x + col),
+                                    static_cast<float>(y + row), 1.0f, 1.0f};
+                    SDL_RenderFillRect(r, &pixel);
+                }
+            }
+        }
+    }
+}
+
+void drawBattle(SDL_Renderer* r, int hp, int maxHp, int level,
+                int enemyHp, int enemyMaxHp, int enemyLevel, int selected,
                 ash_horizon::PokemonSpriteBank& sprites) {
     fill(r, 0, 0, SCREEN_W, SCREEN_H, 190, 220, 235);
     // distant hills
@@ -159,7 +198,8 @@ void drawBattle(SDL_Renderer* r, int hp, int enemyHp, int selected,
     SDL_snprintf(enemyHpText, sizeof(enemyHpText), "%d/%d", enemyHp, enemyMaxHp);
     drawPixelText(r, 58, 13, enemyHpText);
     fill(r, 16, 23, 72, 5, 70, 70, 70);
-    fill(r, 16, 23, 72 * std::max(0, enemyHp) / std::max(1, enemyMaxHp), 5, 70, 190, 90);
+    fill(r, 16, 23, 72 * std::clamp(enemyHp, 0, std::max(1, enemyMaxHp)) /
+         std::max(1, enemyMaxHp), 5, 70, 190, 90);
 
     fill(r, 142, 88, 90, 28, 248, 248, 225);
     drawPixelText(r, 148, 91, "LV");
@@ -170,7 +210,8 @@ void drawBattle(SDL_Renderer* r, int hp, int enemyHp, int selected,
     SDL_snprintf(playerHpText, sizeof(playerHpText), "%d/%d", hp, maxHp);
     drawPixelText(r, 160, 100, playerHpText);
     fill(r, 150, 109, 72, 4, 70, 70, 70);
-    fill(r, 150, 109, 72 * std::max(0, hp) / std::max(1, maxHp), 4, 70, 190, 90);
+    fill(r, 150, 109, 72 * std::clamp(hp, 0, std::max(1, maxHp)) /
+         std::max(1, maxHp), 4, 70, 190, 90);
 
     fill(r, 8, 123, 224, 33, 30, 45, 75);
     fill(r, 10, 125, 220, 29, 245, 245, 230);
