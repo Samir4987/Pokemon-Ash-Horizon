@@ -97,8 +97,7 @@ public:
         return pokemon ? pokemon->friendship : friendship_;
     }
 
-    // The first simple opponent is Pikachu, so its type is Electric.
-    // Later, battle setup will read these types from the Pokédex.
+    // Fallback type setter for test battles without a species record.
     void setEnemyTypes(BattleType first, BattleType second, bool hasSecond = false) {
         enemyType1_ = first;
         enemyType2_ = second;
