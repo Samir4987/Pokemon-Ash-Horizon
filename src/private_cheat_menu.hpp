@@ -56,6 +56,7 @@ public:
     }
 
     bool samfr2xActivated() const { return samfr2xActivated_; }
+    void setSamfr2xActivated(bool active) { samfr2xActivated_ = active; }
 
 private:
 #ifdef ASH_HORIZON_PRIVATE_BUILD
