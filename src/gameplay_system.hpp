@@ -47,7 +47,6 @@ public:
         if (ball == ItemId::GreatBall) bonus = 2;
         else if (ball == ItemId::UltraBall || ball == ItemId::ArceusBall) bonus = 3;
         else if (ball != ItemId::PokeBall) return 0;
-        const int missingHp = maxHp - currentHp;
         const int numerator = catchRate * bonus * (3 * maxHp - 2 * currentHp);
         const int denominator = std::max(1, 3 * maxHp);
         return std::clamp(numerator / denominator, 1, 100);
@@ -64,6 +63,8 @@ public:
         if (party.size() >= PokemonParty::MAX_SIZE) return CaptureResult::PartyFull;
         if (ball == ItemId::ArceusBall && arceusTimer.expired())
             return CaptureResult::TimerExpired;
+        if (ball == ItemId::ArceusBall && !arceusTimer.inUse)
+            arceusTimer.startCountdown(30000);
         if (inventory.quantity(ball) == 0) return CaptureResult::NoBall;
         inventory.remove(ball);
         if (ball == ItemId::ArceusBall) arceusTimer.stop();
