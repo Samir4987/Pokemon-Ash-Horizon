@@ -40,7 +40,7 @@ enum class CaptureResult : std::uint8_t {
 class CaptureSystem {
 public:
     static int chancePercent(ItemId ball, int currentHp, int maxHp,
-                             int catchRate = 120) {
+                             int catchRate = 45) {
         if (maxHp <= 0 || currentHp <= 0 || currentHp > maxHp) return 0;
         if (ball == ItemId::MasterBall) return 100;
         int bonus = 1;
