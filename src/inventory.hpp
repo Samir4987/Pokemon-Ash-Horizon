@@ -69,9 +69,19 @@ private:
 struct ArceusBallState {
     bool unlimitedTime = false;
     std::uint32_t remainingMilliseconds = 30000;
+    bool inUse = false;
+
+    void startCountdown(std::uint32_t durationMilliseconds) {
+        remainingMilliseconds = durationMilliseconds;
+        inUse = true;
+    }
+
+    void stop() { inUse = false; }
+
+    bool expired() const { return inUse && !unlimitedTime && remainingMilliseconds == 0; }
 
     void update(std::uint32_t elapsedMilliseconds) {
-        if (unlimitedTime || remainingMilliseconds == 0) return;
+        if (!inUse || unlimitedTime || remainingMilliseconds == 0) return;
         remainingMilliseconds = elapsedMilliseconds >= remainingMilliseconds
             ? 0u : remainingMilliseconds - elapsedMilliseconds;
     }
