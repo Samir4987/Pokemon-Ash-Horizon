@@ -173,7 +173,6 @@ public:
             ? database_->findSpecies(attacker->nationalDex) : nullptr;
         const BattleStats attackerStats = calculateStats(
             attackerSpecies, attacker ? attacker->level : 5);
-        const BattleMove& move = MOVES[static_cast<std::size_t>(selectedMove_)];
         const float multiplier = enemyHasSecondType_
             ? typeEffectiveness(move.type, enemyType1_, enemyType2_)
             : typeEffectiveness(move.type, enemyType1_);
