@@ -1,3 +1,8 @@
+# Pokémon: Ash Horizon
+# Copyright (C) 2026 Pokémon: Ash Horizon contributors
+# SPDX-License-Identifier: GPL-3.0-only
+# Licensed under GNU GPL version 3 only; see the LICENSE file for details.
+
 #!/usr/bin/env python3
 """Read-only validator for Pokémon Essentials-style PBS text databases."""
 from __future__ import annotations
