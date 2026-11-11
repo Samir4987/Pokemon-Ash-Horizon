@@ -16,6 +16,7 @@
 #include "pokemon_data.hpp"
 #include "private_cheat_menu.hpp"
 #include "save_game.hpp"
+#include "gameplay_system.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -31,7 +32,7 @@ constexpr int MAP_W = 30;
 constexpr int MAP_H = 20;
 constexpr float PLAYER_SPEED = 75.0f;
 
-enum class Mode { World, Battle, Party };
+enum class Mode { World, Battle, Party, Starter };
 
 struct Player {
     float x = 5.0f * TILE;
@@ -134,6 +135,21 @@ void drawWildCreature(SDL_Renderer* r, const ash_horizon::WildCreature& c,
         fill(r, x + 1, y + bob, 2, 2, 245, 225, 110);
         fill(r, x + 14, y + 2 + bob, 2, 2, 245, 225, 110);
     }
+}
+
+void drawStarter(SDL_Renderer* r, int selected) {
+    fill(r, 0, 0, SCREEN_W, SCREEN_H, 28, 52, 72);
+    fill(r, 8, 8, 224, 144, 238, 240, 220);
+    fill(r, 8, 8, 224, 22, 35, 65, 82);
+    SDL_RenderDebugText(r, 18, 15, "CHOOSE YOUR FIRST POKEMON");
+    const char* names[3] = {"BULBASAUR - GRASS", "CHARMANDER - FIRE", "SQUIRTLE - WATER"};
+    for (int i = 0; i < 3; ++i) {
+        const int y = 45 + i * 28;
+        if (i == selected) fill(r, 20, y - 4, 200, 22, 185, 220, 185);
+        SDL_RenderDebugText(r, 32, y, i == selected ? ">" : " ");
+        SDL_RenderDebugText(r, 48, y, names[i]);
+    }
+    SDL_RenderDebugText(r, 18, 132, "W/S SELECT    E CONFIRM");
 }
 
 void drawParty(SDL_Renderer* r, const ash_horizon::PokemonParty& party,
@@ -260,7 +276,7 @@ int main(int, char**) {
     ash_horizon::LivingWorld livingWorld;
     ash_horizon::PokemonSpriteBank spriteBank(renderer);
 
-    // Temporary test roster until the starter-selection and encounter systems exist.
+    // First playable Pokédex slice: the three starter species.
     ash_horizon::PokemonDatabase pokemonDatabase;
     const auto addDemoSpecies = [&pokemonDatabase](
         std::uint16_t dex, const char* name, ash_horizon::PokemonType type,
@@ -282,9 +298,6 @@ int main(int, char**) {
     addDemoSpecies(7, "Squirtle", ash_horizon::PokemonType::Water, 44, 48, 65, 50, 64, 43);
 
     ash_horizon::PokemonParty party;
-    party.add(pokemonDatabase, 1, 5);
-    party.add(pokemonDatabase, 4, 5);
-    party.add(pokemonDatabase, 7, 5);
 
     // One persistent slot for this prototype. SDL creates the per-user folder.
     char* preferencePath = SDL_GetPrefPath("FanMadeSensei", "PokemonAshHorizon");
@@ -315,10 +328,13 @@ int main(int, char**) {
     privateCheatMenu.setSamfr2xActivated(saveData.privateSamfr2xActive);
 #endif
 
-    Mode mode = Mode::World;
+    Mode mode = party.empty() ? Mode::Starter : Mode::World;
     ash_horizon::BattleEngine battle;
     battle.setParty(&party);
     int selectedPartyIndex = 0;
+    int selectedStarter = 0;
+    std::uint16_t wildDex = 1;
+    bool capturedThisBattle = false;
     bool running = true;
     bool encounterReady = true;
     std::mt19937 rng(static_cast<unsigned int>(SDL_GetTicks()));
@@ -338,7 +354,20 @@ int main(int, char**) {
             if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat) {
                 const SDL_Scancode key = event.key.scancode;
 
-                if (mode == Mode::World && key == SDL_SCANCODE_T) {
+                if (mode == Mode::Starter && now - lastAction > 130) {
+                    if (key == SDL_SCANCODE_W) { selectedStarter = (selectedStarter + 2) % 3; lastAction = now; }
+                    else if (key == SDL_SCANCODE_S) { selectedStarter = (selectedStarter + 1) % 3; lastAction = now; }
+                    else if (key == SDL_SCANCODE_E) {
+                        if (ash_horizon::StarterSelection::choose(static_cast<std::size_t>(selectedStarter), pokemonDatabase, party)) {
+                            saveData.inventory.add(ash_horizon::ItemId::PokeBall, 5);
+                            saveData.inventory.add(ash_horizon::ItemId::Potion, 3);
+                            saveData.playerX = player.x; saveData.playerY = player.y;
+                            ash_horizon::SaveGameStore::save(savePath, saveData, party);
+                            mode = Mode::World;
+                        }
+                        lastAction = now;
+                    }
+                } else if (mode == Mode::World && key == SDL_SCANCODE_T) {
                     mode = Mode::Party;
                     selectedPartyIndex = static_cast<int>(party.activeIndex());
                 } else if (mode == Mode::Party && now - lastAction > 130) {
@@ -362,12 +391,29 @@ int main(int, char**) {
                     else if (key == SDL_SCANCODE_S) { battle.moveSelection(2); lastAction = now; }
                     else if (key == SDL_SCANCODE_A) { battle.moveSelection(-1); lastAction = now; }
                     else if (key == SDL_SCANCODE_D) { battle.moveSelection(1); lastAction = now; }
+                    else if (key == SDL_SCANCODE_F && battle.phase() == ash_horizon::BattlePhase::PlayerChoice) {
+                        lastAction = now;
+                        const auto result = ash_horizon::CaptureSystem::attempt(
+                            ash_horizon::ItemId::PokeBall, saveData.inventory, saveData.arceusBall,
+                            party, pokemonDatabase, wildDex, battle.enemyHp(),
+                            ash_horizon::BattleEngine::MAX_HP, encounterRoll(rng));
+                        if (result == ash_horizon::CaptureResult::Caught)
+                            battle.captureSucceeded("Pokemon caught! Press E.");
+                        else if (result == ash_horizon::CaptureResult::Failed)
+                            battle.captureFailed();
+                        else if (result == ash_horizon::CaptureResult::NoBall)
+                            battle.captureSucceeded("No Poke Balls! Press E.");
+                    }
                     else if (key == SDL_SCANCODE_E) {
                         lastAction = now;
                         if (battle.phase() == ash_horizon::BattlePhase::Finished) {
+                            if (battle.enemyHp() == 0 && party.active())
+                                ash_horizon::ProgressionSystem::award(party, party.activeIndex(), pokemonDatabase, 35);
                             battle.reset();
+                            capturedThisBattle = false;
                             mode = Mode::World;
                             lastEncounter = now;
+                            ash_horizon::SaveGameStore::save(savePath, saveData, party);
                         } else battle.chooseMove();
                     }
                 }            }
@@ -403,8 +449,16 @@ int main(int, char**) {
                 const int tx = static_cast<int>((player.x + 6) / TILE);
                 const int ty = static_cast<int>((player.y + 6) / TILE);
                 if (tileAt(tx, ty) == 3 && encounterReady && now - lastEncounter > 900) {
-                    if (encounterRoll(rng) < 2) {
+                    if (encounterRoll(rng) < 2 && party.usableCount() > 0) {
                         mode = Mode::Battle;
+                        const int wildPick = encounterRoll(rng) % 3;
+                        wildDex = ash_horizon::StarterSelection::OPTIONS[wildPick].dex;
+                        const auto* wildSpecies = pokemonDatabase.findSpecies(wildDex);
+                        if (wildSpecies) {
+                            const auto type = static_cast<ash_horizon::BattleType>(
+                                static_cast<unsigned>(wildSpecies->type1) - 1u);
+                            battle.setEnemyTypes(type, ash_horizon::BattleType::Normal, false);
+                        }
                         battle.reset();
                         encounterReady = false;
                     }
@@ -415,7 +469,9 @@ int main(int, char**) {
 
         if (mode == Mode::Battle) battle.update(dt);
 
-        if (mode == Mode::World) {
+        if (mode == Mode::Starter) {
+            drawStarter(renderer, selectedStarter);
+        } else if (mode == Mode::World) {
             livingWorld.update(dt, player.x, player.y, blocked);
             const int cameraX = std::clamp(static_cast<int>(player.x) - SCREEN_W / 2,
                                            0, MAP_W * TILE - SCREEN_W);
@@ -429,7 +485,7 @@ int main(int, char**) {
         } else if (mode == Mode::Battle) {
             drawBattle(renderer, battle, spriteBank);
             battle.drawEffects(renderer);
-        } else {
+        } else if (mode == Mode::Party) {
             drawParty(renderer, party, selectedPartyIndex);
         }
 
