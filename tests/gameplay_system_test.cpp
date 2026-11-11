@@ -42,6 +42,7 @@ int main() {
     assert(timedBall.inUse && timedBall.remainingMilliseconds==30000);
     timedBall.update(30000);
     assert(timedBall.expired());
+    bag.add(ItemId::ArceusBall,1);
     assert(CaptureSystem::attempt(ItemId::ArceusBall,bag,timedBall,party,db,7,5,40,1)
            ==CaptureResult::TimerExpired);
 
