@@ -354,6 +354,7 @@ int main(int, char**) {
     int selectedPartyIndex = 0;
     int selectedStarter = 0;
     int selectedBag = 0;
+    int selectedBall = 0;
     std::uint16_t wildDex = 1;
     std::string wildName = "Wild Pokemon";
     bool running = true;
@@ -437,14 +438,22 @@ int main(int, char**) {
                         }
                         lastAction = now;
                     }
+                    else if (key == SDL_SCANCODE_Z && battle.phase() == ash_horizon::BattlePhase::PlayerChoice) {
+                        selectedBall = (selectedBall + 1) % 5;
+                        lastAction = now;
+                    }
                     else if (key == SDL_SCANCODE_G && battle.phase() == ash_horizon::BattlePhase::PlayerChoice) {
                         battle.runAway();
                         lastAction = now;
                     }
                     else if (key == SDL_SCANCODE_F && battle.phase() == ash_horizon::BattlePhase::PlayerChoice) {
                         lastAction = now;
+                        const ash_horizon::ItemId captureBalls[5] = {
+                            ash_horizon::ItemId::PokeBall, ash_horizon::ItemId::GreatBall,
+                            ash_horizon::ItemId::UltraBall, ash_horizon::ItemId::MasterBall,
+                            ash_horizon::ItemId::ArceusBall};
                         const auto result = ash_horizon::CaptureSystem::attempt(
-                            ash_horizon::ItemId::PokeBall, saveData.inventory, saveData.arceusBall,
+                            captureBalls[selectedBall], saveData.inventory, saveData.arceusBall,
                             party, pokemonDatabase, wildDex, battle.enemyHp(),
                             ash_horizon::BattleEngine::MAX_HP, encounterRoll(rng));
                         if (result == ash_horizon::CaptureResult::Caught)
