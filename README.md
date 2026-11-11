@@ -26,7 +26,7 @@ A small, original, GBA-inspired 2D Pokémon-style adventure prototype written in
 - `E`: confirm a battle move, switch the selected party member, or continue after a battle
 - `T`: open or close the Pokémon party screen (or leave the Bag)
 - `I`: open the Bag
-- `F`: throw a Poké Ball during a wild battle (or leave the Bag)\n- `I`: open the Bag\n- `F`: throw a Poké Ball during a wild battle
+- `F`: throw the selected capture ball during a wild battle\n- `Z`: cycle Poké Ball, Great Ball, Ultra Ball, Master Ball, and Arceus Ball\n- `T`: switch to the next available party Pokémon during battle (uses the opponent turn)\n- `G`: attempt to escape a wild battle (or leave the Bag)\n- `I`: open the Bag\n- `F`: throw a Poké Ball during a wild battle
 - The operating-system window close button closes the game
 
 The approved gameplay key whitelist is exactly `W E T I A S D F G H J K Z X C V B M`. Do not bind any other keyboard keys.
