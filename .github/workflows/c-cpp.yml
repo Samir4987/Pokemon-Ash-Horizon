@@ -61,6 +61,12 @@ jobs:
           g++ -std=c++17 -O2 -Wall -Wextra tests/battle_format_test.cpp -o battle_format_test.exe
           ./battle_format_test.exe
 
+      - name: Run save and inventory unit tests
+        run: |
+          set -euxo pipefail
+          g++ -std=c++17 -O2 -Wall -Wextra tests/save_game_test.cpp -o save_game_test.exe
+          ./save_game_test.exe
+
       - name: Download SDL3 3.4.20 MinGW development package (x86)
         shell: pwsh
         run: |
