@@ -12,11 +12,11 @@ A small, original, GBA-inspired 2D Pokémon-style adventure prototype written in
 - Random encounters while walking through tall grass
 - A turn-based battle prototype with a four-move menu, HP bars, battle messages, type effectiveness, and friendship-based attack refusal
 - Six-slot Pokémon party with species names, levels, individual HP, active-member switching, and battle HP linked to the active Pokémon
-- Per-save battle-style rule data: a save receives a deterministic random Single/Double preference; one-Pokémon parties are always forced to Single, and opponent team size is capped to match the player's party (save-file integration and trainer battle execution are still pending)
-- Private Windows development build has a native top-bar **Cheats** menu with a separate code-entry window; `samfr2x` is recognized, but its item and Arceus Ball effects are pending the inventory and Arceus Ball systems
+- One persistent prototype save slot stores the party, HP, friendship, player position, inventory, Arceus Ball timer state, and a randomized Single/Double preference; a party with fewer than two usable Pokémon resolves to Single
+- Private Windows development build has a native top-bar **Cheats** menu with a separate code-entry window; `samfr2x` grants 999 of every currently defined item and makes the Arceus Ball timer unlimited in the saved game (the full capture mechanic is not implemented yet)
 - Temporary demo roster currently starts with Bulbasaur, Charmander, and Squirtle; starter selection and catching are not implemented yet
 - Standalone Pokémon stat and damage calculation core (IVs, EVs, nature, stat stages, STAB, type multiplier, random damage factor, and critical-hit modifier)
-- Automated battle-stat, Pokédex, party, and battle-format unit tests run in Windows CI
+- Automated battle-stat, Pokédex, party, battle-format, and save/inventory unit tests run in Windows CI
 - Lazy-loaded Pokémon sprite bank with SDL3_image support for common image formats (PNG, BMP, JPEG, GIF, WebP, TGA, TIFF, QOI, and other formats enabled by the SDL3_image build)
 
 ## Controls
@@ -49,8 +49,11 @@ The script uses `g++ -m32`; the compiler itself must have 32-bit MinGW-w64 suppo
 - `src/pokemon_data.hpp` — lightweight species, form, evolution, and local TSV data-loading foundation
 - `src/pokemon_party.hpp` — six-slot party, Pokémon HP, levels, friendship, and switching
 - `src/battle_format.hpp` — per-save randomized Single/Double preference and party-size constraints
+- `src/inventory.hpp` — item quantities and Arceus Ball timer state
+- `src/save_game.hpp` — persistent save serialization for battle rules, party, inventory, position, and timer state
 - `src/private_cheat_menu.hpp` — private-build native desktop Cheats menu and separate code-entry window
 - `tests/pokemon_party_test.cpp` — party storage, HP, healing, and switching tests
+- `tests/save_game_test.cpp` — save/load, inventory, and Arceus Ball timer tests
 - `tests/pokemon_data_test.cpp` — Pokédex data validation and loader tests
 - `tests/battle_stats_test.cpp` — unit tests for the stat calculation core
 - `build_32bit.bat` — Windows x86 build script
