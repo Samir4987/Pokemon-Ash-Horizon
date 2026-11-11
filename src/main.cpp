@@ -299,10 +299,9 @@ int main(int, char**) {
         player.x = saveData.playerX;
         player.y = saveData.playerY;
     } else {
-        std::random_device seedSource;
-        const std::uint32_t newSaveSeed =
-            (static_cast<std::uint32_t>(seedSource()) ^
-             static_cast<std::uint32_t>(SDL_GetTicks()));
+        const Uint64 seedEntropy = SDL_GetTicksNS() ^ SDL_GetPerformanceCounter();
+        const std::uint32_t newSaveSeed = static_cast<std::uint32_t>(
+            seedEntropy ^ (seedEntropy >> 32));
         saveData.battleRules = ash_horizon::SaveBattleRules::create(newSaveSeed);
         saveData.playerX = player.x;
         saveData.playerY = player.y;
