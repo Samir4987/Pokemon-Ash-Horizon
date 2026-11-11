@@ -204,14 +204,15 @@ void drawParty(SDL_Renderer* r, const ash_horizon::PokemonParty& party,
 }
 
 void drawBattle(SDL_Renderer* r, const ash_horizon::BattleEngine& battle,
-                ash_horizon::PokemonSpriteBank& sprites) {
+                ash_horizon::PokemonSpriteBank& sprites, int enemyDex,
+                const char* enemyName) {
     fill(r, 0, 0, SCREEN_W, SCREEN_H, 190, 220, 235);
     // distant hills
     fill(r, 0, 65, SCREEN_W, 35, 135, 190, 115);
     fill(r, 0, 100, SCREEN_W, 60, 95, 170, 90);
     // Platforms and sprite-backed battle creatures (temporary fallbacks if files are absent).
     fill(r, 142, 48, 72, 12, 115, 160, 105);
-    if (!sprites.drawPokemon(25, "normal", "front", 157, 14, 40, 38)) {
+    if (!sprites.drawPokemon(enemyDex, "normal", "front", 157, 14, 40, 38)) {
         fill(r, 162, 25, 28, 24, 225, 125, 75);
         fill(r, 168, 31, 5, 5, 255, 245, 210);
         fill(r, 180, 31, 5, 5, 255, 245, 210);
@@ -230,7 +231,7 @@ void drawBattle(SDL_Renderer* r, const ash_horizon::BattleEngine& battle,
     const int enemyHp = battle.enemyHp();
     fill(r, 8, 8, 100, 31, 248, 248, 225);
     fill(r, 8, 8, 100, 2, 45, 65, 65);
-    SDL_RenderDebugText(r, 14, 12, "WILD POKEMON");
+    SDL_RenderDebugText(r, 14, 12, enemyName);
     SDL_RenderDebugText(r, 14, 23, "HP");
     fill(r, 32, 25, 66, 5, 70, 70, 70);
     fill(r, 32, 25, 66 * std::max(0, enemyHp) / ash_horizon::BattleEngine::MAX_HP,
@@ -354,6 +355,7 @@ int main(int, char**) {
     int selectedStarter = 0;
     int selectedBag = 0;
     std::uint16_t wildDex = 1;
+    std::string wildName = "Wild Pokemon";
     bool running = true;
     bool encounterReady = true;
     std::mt19937 rng(static_cast<unsigned int>(SDL_GetTicks()));
@@ -428,6 +430,17 @@ int main(int, char**) {
                     else if (key == SDL_SCANCODE_S) { battle.moveSelection(2); lastAction = now; }
                     else if (key == SDL_SCANCODE_A) { battle.moveSelection(-1); lastAction = now; }
                     else if (key == SDL_SCANCODE_D) { battle.moveSelection(1); lastAction = now; }
+                    else if (key == SDL_SCANCODE_T && battle.phase() == ash_horizon::BattlePhase::PlayerChoice) {
+                        for (std::size_t offset = 1; offset <= party.size(); ++offset) {
+                            const std::size_t candidate = (party.activeIndex() + offset) % party.size();
+                            if (party.switchTo(candidate)) { battle.switchTurn(); break; }
+                        }
+                        lastAction = now;
+                    }
+                    else if (key == SDL_SCANCODE_G && battle.phase() == ash_horizon::BattlePhase::PlayerChoice) {
+                        battle.runAway();
+                        lastAction = now;
+                    }
                     else if (key == SDL_SCANCODE_F && battle.phase() == ash_horizon::BattlePhase::PlayerChoice) {
                         lastAction = now;
                         const auto result = ash_horizon::CaptureSystem::attempt(
@@ -495,6 +508,7 @@ int main(int, char**) {
                         wildDex = ash_horizon::StarterSelection::OPTIONS[wildPick].dex;
                         const auto* wildSpecies = pokemonDatabase.findSpecies(wildDex);
                         if (wildSpecies) {
+                            wildName = wildSpecies->name;
                             const auto type = static_cast<ash_horizon::BattleType>(
                                 static_cast<unsigned>(wildSpecies->type1) - 1u);
                             battle.setEnemyTypes(type, ash_horizon::BattleType::Normal, false);
@@ -526,7 +540,7 @@ int main(int, char**) {
             }
             drawPlayer(renderer, player.x - cameraX, player.y - cameraY);
         } else if (mode == Mode::Battle) {
-            drawBattle(renderer, battle, spriteBank);
+            drawBattle(renderer, battle, spriteBank, wildDex, wildName.c_str());
             battle.drawEffects(renderer);
         } else if (mode == Mode::Party) {
             drawParty(renderer, party, selectedPartyIndex);
