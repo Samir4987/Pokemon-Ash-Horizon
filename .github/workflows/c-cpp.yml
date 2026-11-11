@@ -55,6 +55,12 @@ jobs:
           g++ -std=c++17 -O2 -Wall -Wextra tests/pokemon_party_test.cpp -o pokemon_party_test.exe
           ./pokemon_party_test.exe
 
+      - name: Run battle format unit tests
+        run: |
+          set -euxo pipefail
+          g++ -std=c++17 -O2 -Wall -Wextra tests/battle_format_test.cpp -o battle_format_test.exe
+          ./battle_format_test.exe
+
       - name: Download SDL3 3.4.20 MinGW development package (x86)
         shell: pwsh
         run: |
@@ -95,7 +101,7 @@ jobs:
           IMG_LIB_DIR="$(dirname "$IMG_IMPORT_LIB")"
 
           g++ --version
-          g++ -std=c++17 -O2 -Wall -Wextra -static-libgcc -static-libstdc++ src/main.cpp -o PokemonAshHorizon.exe -I"$SDL_INCLUDE_DIR" -I"$IMG_INCLUDE_DIR" -L"$SDL_LIB_DIR" -L"$IMG_LIB_DIR" -lSDL3_image -lSDL3
+          g++ -std=c++17 -O2 -Wall -Wextra -DASH_HORIZON_PRIVATE_BUILD -static-libgcc -static-libstdc++ src/main.cpp -o PokemonAshHorizon.exe -I"$SDL_INCLUDE_DIR" -I"$IMG_INCLUDE_DIR" -L"$SDL_LIB_DIR" -L"$IMG_LIB_DIR" -lSDL3_image -lSDL3
 
           cp "$SDL_DLL" ./SDL3.dll
           cp "$IMG_DLL" ./SDL3_image.dll
