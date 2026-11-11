@@ -67,6 +67,12 @@ jobs:
           g++ -std=c++17 -O2 -Wall -Wextra tests/save_game_test.cpp -o save_game_test.exe
           ./save_game_test.exe
 
+      - name: Run gameplay system unit tests
+        run: |
+          set -euxo pipefail
+          g++ -std=c++17 -O2 -Wall -Wextra tests/gameplay_system_test.cpp -o gameplay_system_test.exe
+          ./gameplay_system_test.exe
+
       - name: Download SDL3 3.4.20 MinGW development package (x86)
         shell: pwsh
         run: |
