@@ -27,6 +27,7 @@ struct PartyPokemon {
     int currentHp = 1;
     int maxHp = 1;
     std::uint8_t friendship = 100;
+    std::uint32_t experience = 0;
 
     bool fainted() const { return currentHp <= 0; }
 };
@@ -83,6 +84,10 @@ public:
     }
     std::size_t activeIndex() const { return activeIndex_; }
     const std::vector<PartyPokemon>& members() const { return members_; }
+
+    PartyPokemon* member(std::size_t index) {
+        return index < members_.size() ? &members_[index] : nullptr;
+    }
 
     const PartyPokemon* member(std::size_t index) const {
         return index < members_.size() ? &members_[index] : nullptr;
