@@ -35,6 +35,7 @@ int main() {
     data.arceusBall.update(5000);
     assert(data.arceusBall.remainingMilliseconds == 20000);
     data.arceusBall.unlimitedTime = true;
+    data.privateSamfr2xActive = true;
     data.playerX = 333.5f;
     data.playerY = 121.25f;
 
@@ -50,6 +51,7 @@ int main() {
     assert(loaded.inventory.quantity(ItemId::MasterBall) == 999);
     assert(loaded.inventory.quantity(ItemId::ArceusBall) == 999);
     assert(loaded.arceusBall.unlimitedTime);
+    assert(loaded.privateSamfr2xActive);
     assert(loaded.arceusBall.inUse);
     assert(loaded.arceusBall.remainingMilliseconds == 20000);
     assert(loaded.playerX == data.playerX && loaded.playerY == data.playerY);
