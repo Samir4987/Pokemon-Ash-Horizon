@@ -132,7 +132,7 @@ void drawWildCreature(SDL_Renderer* r, const ash_horizon::WildCreature& c,
     }
 }
 
-void drawBattle(SDL_Renderer* r, int hp, int enemyHp, int selected,
+void drawBattle(SDL_Renderer* r, const ash_horizon::BattleEngine& battle,
                 ash_horizon::PokemonSpriteBank& sprites) {
     fill(r, 0, 0, SCREEN_W, SCREEN_H, 190, 220, 235);
     // distant hills
@@ -152,21 +152,41 @@ void drawBattle(SDL_Renderer* r, int hp, int enemyHp, int selected,
         fill(r, 64, 82, 5, 5, 255, 255, 255);
     }
 
-    // UI panels / HP bars
-    fill(r, 8, 8, 94, 30, 248, 248, 225);
-    fill(r, 8, 8, 94, 2, 45, 65, 65);
-    fill(r, 142, 88, 90, 28, 248, 248, 225);
-    fill(r, 150, 100, 72, 5, 70, 70, 70);
-    fill(r, 150, 100, 72 * std::max(0, enemyHp) / 20, 5, 70, 190, 90);
-    fill(r, 16, 23, 72, 5, 70, 70, 70);
-    fill(r, 16, 23, 72 * std::max(0, hp) / 20, 5, 70, 190, 90);
+    // Readable status panels: keep the UI inside the 240x160 GBA canvas.
+    const int playerHp = battle.playerHp();
+    const int enemyHp = battle.enemyHp();
+    fill(r, 8, 8, 100, 31, 248, 248, 225);
+    fill(r, 8, 8, 100, 2, 45, 65, 65);
+    SDL_RenderDebugText(r, 14, 12, "WILD POKEMON");
+    SDL_RenderDebugText(r, 14, 23, "HP");
+    fill(r, 32, 25, 66, 5, 70, 70, 70);
+    fill(r, 32, 25, 66 * std::max(0, enemyHp) / ash_horizon::BattleEngine::MAX_HP,
+         5, 70, 190, 90);
 
+    fill(r, 132, 84, 100, 34, 248, 248, 225);
+    fill(r, 132, 84, 100, 2, 45, 65, 65);
+    SDL_RenderDebugText(r, 138, 88, "YOUR POKEMON");
+    SDL_RenderDebugText(r, 138, 99, "HP");
+    fill(r, 156, 101, 66, 5, 70, 70, 70);
+    fill(r, 156, 101, 66 * std::max(0, playerHp) / ash_horizon::BattleEngine::MAX_HP,
+         5, 70, 190, 90);
+
+    // Battle feedback and a real 2x2 move menu.
+    fill(r, 8, 113, 224, 9, 30, 45, 75);
+    SDL_RenderDebugText(r, 11, 114, battle.message());
     fill(r, 8, 123, 224, 33, 30, 45, 75);
     fill(r, 10, 125, 220, 29, 245, 245, 230);
-    // Menu cursor and two selectable rows.
-    fill(r, 20, selected == 0 ? 133 : 145, 5, 5, 40, 60, 80);
-    fill(r, 34, 133, 65, 4, 55, 75, 95);
-    fill(r, 34, 145, 65, 4, 55, 75, 95);
+
+    const auto& moves = battle.moves();
+    const int selected = battle.selectedMove();
+    const float moveX[4] = {22.0f, 126.0f, 22.0f, 126.0f};
+    const float moveY[4] = {130.0f, 130.0f, 143.0f, 143.0f};
+    for (int i = 0; i < 4; ++i) {
+        if (i == selected) {
+            SDL_RenderDebugText(r, moveX[i] - 10.0f, moveY[i], ">");
+        }
+        SDL_RenderDebugText(r, moveX[i], moveY[i], moves[static_cast<std::size_t>(i)].name);
+    }
 }
 
 } // namespace
@@ -273,7 +293,7 @@ int main(int, char**) {
             }
             drawPlayer(renderer, player.x - cameraX, player.y - cameraY);
         } else {
-            drawBattle(renderer, battle.playerHp() / 5, battle.enemyHp() / 5, battle.selectedMove() / 2, spriteBank);
+            drawBattle(renderer, battle, spriteBank);
             battle.drawEffects(renderer);
         }
 
