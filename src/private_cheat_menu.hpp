@@ -42,7 +42,7 @@ public:
         HMENU cheats = CreatePopupMenu();
         if (!menu || !cheats) return false;
         AppendMenuW(cheats, MF_STRING, ID_OPEN_CHEAT, L"Enter Cheat Code...");
-        AppendMenuW(cheats, MF_STRING | MF_GRAYED, ID_ACTIVE_CHEATS, L"Active Cheats");
+        AppendMenuW(cheats, MF_STRING, ID_ACTIVE_CHEATS, L"Active Cheats");
         AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(cheats), L"Cheats");
         SetMenu(hwnd, menu);
         DrawMenuBar(hwnd);
@@ -103,7 +103,7 @@ private:
             const std::wstring entered(code);
             if (entered == L"samfr2x") {
                 self->samfr2xActivated_ = true;
-                SetWindowTextW(self->status_, L"samfr2x accepted (item/time effects pending game systems)");
+                SetWindowTextW(self->status_, L"Code recognized. Item/time effects are not connected yet.");
             } else {
                 SetWindowTextW(self->status_, L"Unknown code. Check spelling.");
             }
