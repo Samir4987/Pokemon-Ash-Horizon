@@ -61,11 +61,11 @@ public:
         if (!database.findSpecies(targetDex) || currentHp <= 0 || maxHp <= 0 ||
             currentHp > maxHp) return CaptureResult::InvalidTarget;
         if (party.size() >= PokemonParty::MAX_SIZE) return CaptureResult::PartyFull;
+        if (inventory.quantity(ball) == 0) return CaptureResult::NoBall;
         if (ball == ItemId::ArceusBall && arceusTimer.expired())
             return CaptureResult::TimerExpired;
         if (ball == ItemId::ArceusBall && !arceusTimer.inUse)
             arceusTimer.startCountdown(30000);
-        if (inventory.quantity(ball) == 0) return CaptureResult::NoBall;
         inventory.remove(ball);
         if (std::clamp(rollPercent, 1, 100) > chancePercent(ball, currentHp, maxHp))
             return CaptureResult::Failed;
