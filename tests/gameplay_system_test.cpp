@@ -34,6 +34,16 @@ int main() {
     assert(CaptureSystem::attempt(ItemId::PokeBall,bag,timer,party,db,1,5,maxHp,1)
            ==CaptureResult::Caught);
     assert(party.size()==2 && bag.quantity(ItemId::PokeBall)==1);
+    assert(CaptureSystem::chancePercent(ItemId::MasterBall,40,40)==100);
+    bag.add(ItemId::ArceusBall,1);
+    ArceusBallState timedBall;
+    assert(CaptureSystem::attempt(ItemId::ArceusBall,bag,timedBall,party,db,7,40,40,100)
+           ==CaptureResult::Failed);
+    assert(timedBall.inUse && timedBall.remainingMilliseconds==30000);
+    timedBall.update(30000);
+    assert(timedBall.expired());
+    assert(CaptureSystem::attempt(ItemId::ArceusBall,bag,timedBall,party,db,7,5,40,1)
+           ==CaptureResult::TimerExpired);
 
     party.member(0)->currentHp=1;
     assert(ItemUseSystem::useHealingItem(ItemId::Potion,bag,party,0));
