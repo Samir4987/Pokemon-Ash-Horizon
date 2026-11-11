@@ -14,6 +14,7 @@
 #include "pokemon_sprite_bank.hpp"
 #include "pokemon_party.hpp"
 #include "pokemon_data.hpp"
+#include "private_cheat_menu.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -246,6 +247,12 @@ int main(int, char**) {
     }
     SDL_SetRenderLogicalPresentation(renderer, SCREEN_W, SCREEN_H,
                                      SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
+
+#ifdef _WIN32
+    // Private builds add a native desktop Cheats menu outside the game canvas.
+    ash_horizon::PrivateCheatMenu privateCheatMenu(window);
+    privateCheatMenu.attach();
+#endif
 
     Player player;
     ash_horizon::LivingWorld livingWorld;
