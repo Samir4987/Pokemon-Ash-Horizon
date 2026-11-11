@@ -107,7 +107,7 @@ private:
             const std::wstring entered(code);
             if (entered == L"samfr2x") {
                 self->samfr2xActivated_ = true;
-                SetWindowTextW(self->status_, L"Code recognized. Item/time effects are not connected yet.");
+                SetWindowTextW(self->status_, L"Code recognized. 999 items and unlimited Arceus Ball time will be applied.");
             } else {
                 SetWindowTextW(self->status_, L"Unknown code. Check spelling.");
             }
