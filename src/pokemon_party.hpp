@@ -64,6 +64,12 @@ public:
         return true;
     }
 
+    bool restoreActiveIndex(std::size_t index) {
+        if (index >= members_.size()) return members_.empty() && index == 0;
+        activeIndex_ = index;
+        return true;
+    }
+
     void clear() {
         members_.clear();
         activeIndex_ = 0;
