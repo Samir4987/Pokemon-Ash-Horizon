@@ -31,7 +31,7 @@ public:
                      const PokemonParty& party) {
         std::ofstream out(path, std::ios::trunc);
         if (!out) return false;
-        out << "ASH_HORIZON_SAVE 1\n";
+        out << "ASH_HORIZON_SAVE 2\n";
         out << std::quoted(data.battleRules.serialize()) << '\n';
         out << std::setprecision(9) << data.playerX << ' ' << data.playerY << '\n';
         out << (data.arceusBall.unlimitedTime ? 1 : 0) << ' '
@@ -45,7 +45,7 @@ public:
             out << pokemon.nationalDex << ' ' << static_cast<unsigned>(pokemon.level)
                 << ' ' << pokemon.currentHp << ' ' << pokemon.maxHp << ' '
                 << static_cast<unsigned>(pokemon.friendship) << ' '
-                << std::quoted(pokemon.nickname) << '\n';
+                << pokemon.experience << ' ' << std::quoted(pokemon.nickname) << '\n';
         }
         return static_cast<bool>(out);
     }
@@ -56,7 +56,9 @@ public:
         if (!in) return false;
 
         std::string header, serializedRules;
-        if (!std::getline(in, header) || header != "ASH_HORIZON_SAVE 1") return false;
+        if (!std::getline(in, header) ||
+            (header != "ASH_HORIZON_SAVE 1" && header != "ASH_HORIZON_SAVE 2")) return false;
+        const bool hasExperience = header == "ASH_HORIZON_SAVE 2";
         if (!(in >> std::quoted(serializedRules))) return false;
 
         SaveGameData loaded;
@@ -86,14 +88,17 @@ public:
         for (std::size_t i = 0; i < partyCount; ++i) {
             unsigned dex = 0, level = 0, friendship = 0;
             int hp = 0, maxHp = 0;
+            std::uint32_t experience = 0;
             std::string nickname;
-            if (!(in >> dex >> level >> hp >> maxHp >> friendship >> std::quoted(nickname)) ||
+            if (!(in >> dex >> level >> hp >> maxHp >> friendship) ||
+                (hasExperience && !(in >> experience)) || !(in >> std::quoted(nickname)) ||
                 dex > 1025 || level == 0 || level > 100 || friendship > 100 ||
                 maxHp <= 0 || hp < 0 || hp > maxHp ||
                 !loadedParty.add(database, static_cast<std::uint16_t>(dex),
                                  static_cast<std::uint8_t>(level), nickname) ||
                 !loadedParty.restoreMemberState(i, hp, maxHp,
                     static_cast<std::uint8_t>(friendship))) return false;
+            loadedParty.member(i)->experience = experience;
         }
         if (!loadedParty.restoreActiveIndex(activeIndex)) return false;
 
