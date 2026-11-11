@@ -15,6 +15,7 @@
 #include "pokemon_party.hpp"
 #include "pokemon_data.hpp"
 #include "private_cheat_menu.hpp"
+#include "save_game.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -252,6 +253,7 @@ int main(int, char**) {
     // Private builds add a native desktop Cheats menu outside the game canvas.
     ash_horizon::PrivateCheatMenu privateCheatMenu(window);
     privateCheatMenu.attach();
+    bool privateCheatApplied = false;
 #endif
 
     Player player;
@@ -283,6 +285,28 @@ int main(int, char**) {
     party.add(pokemonDatabase, 1, 5);
     party.add(pokemonDatabase, 4, 5);
     party.add(pokemonDatabase, 7, 5);
+
+    // One persistent slot for this prototype. SDL creates the per-user folder.
+    char* preferencePath = SDL_GetPrefPath("FanMadeSensei", "PokemonAshHorizon");
+    const std::string savePath = preferencePath
+        ? std::string(preferencePath) + "save1.ahs" : "save1.ahs";
+    if (preferencePath) SDL_free(preferencePath);
+
+    ash_horizon::SaveGameData saveData;
+    const bool loadedExistingSave =
+        ash_horizon::SaveGameStore::load(savePath, saveData, party, pokemonDatabase);
+    if (loadedExistingSave) {
+        player.x = saveData.playerX;
+        player.y = saveData.playerY;
+    } else {
+        std::random_device seedSource;
+        const std::uint32_t newSaveSeed =
+            (static_cast<std::uint32_t>(seedSource()) ^
+             static_cast<std::uint32_t>(SDL_GetTicks()));
+        saveData.battleRules = ash_horizon::SaveBattleRules::create(newSaveSeed);
+        saveData.playerX = player.x;
+        saveData.playerY = player.y;
+    }
 
     Mode mode = Mode::World;
     ash_horizon::BattleEngine battle;
@@ -342,6 +366,15 @@ int main(int, char**) {
                 }            }
         }
 
+#ifdef _WIN32
+        // Apply the private code once; its effects are saved with this save slot.
+        if (!privateCheatApplied && privateCheatMenu.samfr2xActivated()) {
+            saveData.inventory.grantEverything(ash_horizon::Inventory::MAX_STACK);
+            saveData.arceusBall.unlimitedTime = true;
+            privateCheatApplied = true;
+        }
+#endif
+
         if (mode == Mode::World) {
             const bool* keys = SDL_GetKeyboardState(nullptr);
             float dx = 0.0f, dy = 0.0f;
@@ -393,6 +426,11 @@ int main(int, char**) {
 
         SDL_RenderPresent(renderer);
     }
+
+    saveData.playerX = player.x;
+    saveData.playerY = player.y;
+    const bool saveWritten = ash_horizon::SaveGameStore::save(savePath, saveData, party);
+    (void)saveWritten;
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
