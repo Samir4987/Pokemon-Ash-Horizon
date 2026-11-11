@@ -6,13 +6,9 @@
 #include <cmath>
 #include <cstdint>
 #include <random>
+#include "type_chart.hpp"
 
 namespace ash_horizon {
-
-enum class BattleType : std::uint8_t {
-    Normal, Fire, Water, Electric, Grass, Ice, Fighting, Poison, Ground,
-    Flying, Psychic, Bug, Rock, Ghost, Dragon, Dark, Steel, Fairy
-};
 
 enum class MoveClass : std::uint8_t { Physical, Special, Status };
 enum class BattlePhase : std::uint8_t { PlayerChoice, AttackAnimation, EnemyTurn, Finished };
@@ -87,7 +83,7 @@ public:
             phase_ = BattlePhase::EnemyTurn;
             return;
         }
-        const float multiplier = effectiveness(move.type, BattleType::Normal);
+        const float multiplier = typeEffectiveness(move.type, BattleType::Normal);
         const int damage = std::max(1, static_cast<int>(
             (static_cast<float>(move.power) * multiplier) / 10.0f));
         enemyHp_ = std::max(0, enemyHp_ - damage);
@@ -144,41 +140,6 @@ private:
     std::array<BattleParticle, 48> particles_{};
     std::size_t particleCount_ = 0;
     std::mt19937 rng_;
-
-    static float effectiveness(BattleType attack, BattleType defend) {
-        // First-pass core chart; expanded to the complete 18-type matrix next.
-        if (defend == BattleType::Normal) {
-            if (attack == BattleType::Fighting) return 2.0f;
-            if (attack == BattleType::Ghost) return 0.0f;
-        }
-        if (defend == BattleType::Fire) {
-            if (attack == BattleType::Water || attack == BattleType::Ground ||
-                attack == BattleType::Rock) return 2.0f;
-            if (attack == BattleType::Fire || attack == BattleType::Grass ||
-                attack == BattleType::Ice || attack == BattleType::Bug ||
-                attack == BattleType::Steel || attack == BattleType::Fairy) return 0.5f;
-        }
-        if (defend == BattleType::Water) {
-            if (attack == BattleType::Electric || attack == BattleType::Grass) return 2.0f;
-            if (attack == BattleType::Fire || attack == BattleType::Water ||
-                attack == BattleType::Ice || attack == BattleType::Steel) return 0.5f;
-        }
-        if (defend == BattleType::Grass) {
-            if (attack == BattleType::Fire || attack == BattleType::Ice ||
-                attack == BattleType::Poison || attack == BattleType::Flying ||
-                attack == BattleType::Bug) return 2.0f;
-            if (attack == BattleType::Water || attack == BattleType::Electric ||
-                attack == BattleType::Grass || attack == BattleType::Ground) return 0.5f;
-        }
-        if (defend == BattleType::Ground && attack == BattleType::Electric) return 0.0f;
-        if (defend == BattleType::Flying && attack == BattleType::Ground) return 0.0f;
-        if (defend == BattleType::Electric) {
-            if (attack == BattleType::Ground) return 2.0f;
-            if (attack == BattleType::Electric || attack == BattleType::Flying ||
-                attack == BattleType::Steel) return 0.5f;
-        }
-        return 1.0f;
-    }
 
     void startAnimation(BattleType type) {
         animationTime_ = 0.0f;
