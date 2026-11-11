@@ -49,6 +49,12 @@ jobs:
           g++ -std=c++17 -O2 -Wall -Wextra tests/pokemon_data_test.cpp -o pokemon_data_test.exe
           ./pokemon_data_test.exe
 
+      - name: Run Pokémon party unit tests
+        run: |
+          set -euxo pipefail
+          g++ -std=c++17 -O2 -Wall -Wextra tests/pokemon_party_test.cpp -o pokemon_party_test.exe
+          ./pokemon_party_test.exe
+
       - name: Download SDL3 3.4.20 MinGW development package (x86)
         shell: pwsh
         run: |
