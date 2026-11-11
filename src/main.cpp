@@ -32,7 +32,7 @@ constexpr int MAP_W = 30;
 constexpr int MAP_H = 20;
 constexpr float PLAYER_SPEED = 75.0f;
 
-enum class Mode { World, Battle, Party, Starter };
+enum class Mode { World, Battle, Party, Bag, Starter };
 
 struct Player {
     float x = 5.0f * TILE;
@@ -150,6 +150,25 @@ void drawStarter(SDL_Renderer* r, int selected) {
         SDL_RenderDebugText(r, 48, y, names[i]);
     }
     SDL_RenderDebugText(r, 18, 132, "W/S SELECT    E CONFIRM");
+}
+
+void drawBag(SDL_Renderer* r, const ash_horizon::Inventory& bag, int selected) {
+    fill(r, 0, 0, SCREEN_W, SCREEN_H, 42, 65, 83);
+    fill(r, 5, 5, 230, 150, 238, 240, 220);
+    fill(r, 5, 5, 230, 18, 35, 65, 82);
+    SDL_RenderDebugText(r, 14, 11, "BAG - W/S SELECT, E USE, T BACK");
+    const ash_horizon::ItemId items[3] = {ash_horizon::ItemId::Potion,
+        ash_horizon::ItemId::SuperPotion, ash_horizon::ItemId::Revive};
+    const char* names[3] = {"Potion", "Super Potion", "Revive"};
+    for (int i = 0; i < 3; ++i) {
+        const int y = 42 + i * 28;
+        if (i == selected) fill(r, 14, y - 4, 210, 22, 190, 225, 190);
+        SDL_RenderDebugText(r, 20, y, i == selected ? ">" : " ");
+        SDL_RenderDebugText(r, 36, y, names[i]);
+        const std::string count = "x" + std::to_string(bag.quantity(items[i]));
+        SDL_RenderDebugText(r, 174, y, count.c_str());
+    }
+    SDL_RenderDebugText(r, 14, 133, "Use items on your active Pokemon");
 }
 
 void drawParty(SDL_Renderer* r, const ash_horizon::PokemonParty& party,
@@ -333,8 +352,8 @@ int main(int, char**) {
     battle.setParty(&party);
     int selectedPartyIndex = 0;
     int selectedStarter = 0;
+    int selectedBag = 0;
     std::uint16_t wildDex = 1;
-    bool capturedThisBattle = false;
     bool running = true;
     bool encounterReady = true;
     std::mt19937 rng(static_cast<unsigned int>(SDL_GetTicks()));
@@ -367,9 +386,27 @@ int main(int, char**) {
                         }
                         lastAction = now;
                     }
+                } else if (mode == Mode::World && key == SDL_SCANCODE_I) {
+                    mode = Mode::Bag;
+                    selectedBag = 0;
                 } else if (mode == Mode::World && key == SDL_SCANCODE_T) {
                     mode = Mode::Party;
                     selectedPartyIndex = static_cast<int>(party.activeIndex());
+                } else if (mode == Mode::Bag && now - lastAction > 130) {
+                    if (key == SDL_SCANCODE_T) { mode = Mode::World; lastAction = now; }
+                    else if (key == SDL_SCANCODE_W) { selectedBag = (selectedBag + 2) % 3; lastAction = now; }
+                    else if (key == SDL_SCANCODE_S) { selectedBag = (selectedBag + 1) % 3; lastAction = now; }
+                    else if (key == SDL_SCANCODE_E) {
+                        const ash_horizon::ItemId items[3] = {ash_horizon::ItemId::Potion,
+                            ash_horizon::ItemId::SuperPotion, ash_horizon::ItemId::Revive};
+                        if (party.active()) {
+                            if (selectedBag == 2)
+                                ash_horizon::ItemUseSystem::useRevive(items[selectedBag], saveData.inventory, party, party.activeIndex());
+                            else
+                                ash_horizon::ItemUseSystem::useHealingItem(items[selectedBag], saveData.inventory, party, party.activeIndex());
+                        }
+                        lastAction = now;
+                    }
                 } else if (mode == Mode::Party && now - lastAction > 130) {
                     if (key == SDL_SCANCODE_T) {
                         mode = Mode::World;
@@ -402,7 +439,11 @@ int main(int, char**) {
                         else if (result == ash_horizon::CaptureResult::Failed)
                             battle.captureFailed();
                         else if (result == ash_horizon::CaptureResult::NoBall)
-                            battle.captureSucceeded("No Poke Balls! Press E.");
+                            battle.captureUnavailable("No Poke Balls available.");
+                        else if (result == ash_horizon::CaptureResult::PartyFull)
+                            battle.captureUnavailable("Party is full!");
+                        else if (result == ash_horizon::CaptureResult::TimerExpired)
+                            battle.captureUnavailable("Arceus Ball timer expired.");
                     }
                     else if (key == SDL_SCANCODE_E) {
                         lastAction = now;
@@ -410,7 +451,6 @@ int main(int, char**) {
                             if (battle.enemyHp() == 0 && party.active())
                                 ash_horizon::ProgressionSystem::award(party, party.activeIndex(), pokemonDatabase, 35);
                             battle.reset();
-                            capturedThisBattle = false;
                             mode = Mode::World;
                             lastEncounter = now;
                             ash_horizon::SaveGameStore::save(savePath, saveData, party);
@@ -467,7 +507,10 @@ int main(int, char**) {
             if (now - lastEncounter > 1200) encounterReady = true;
         }
 
-        if (mode == Mode::Battle) battle.update(dt);
+        if (mode == Mode::Battle) {
+            battle.update(dt);
+            saveData.arceusBall.update(static_cast<std::uint32_t>(dt * 1000.0f));
+        }
 
         if (mode == Mode::Starter) {
             drawStarter(renderer, selectedStarter);
@@ -487,6 +530,8 @@ int main(int, char**) {
             battle.drawEffects(renderer);
         } else if (mode == Mode::Party) {
             drawParty(renderer, party, selectedPartyIndex);
+        } else if (mode == Mode::Bag) {
+            drawBag(renderer, saveData.inventory, selectedBag);
         }
 
         SDL_RenderPresent(renderer);
