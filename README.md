@@ -17,9 +17,12 @@ A small, original, GBA-inspired 2D Pokémon-style adventure prototype written in
 
 ## Controls
 
-- Arrow keys / WASD: move
-- Enter / Space: confirm or attack
-- Escape: quit
+- `W A S D`: move up, left, down, and right
+- In battle, `W` / `S`: move between menu rows; `A` / `D`: move between columns
+- `E`: confirm the selected battle move or continue after a battle
+- The operating-system window close button closes the game
+
+Only `W E T I A S D F G H J K L Z X C V B M` are approved for future gameplay bindings.
 
 ## Build on 32-bit Windows
 
