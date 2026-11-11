@@ -234,7 +234,7 @@ void drawBattle(SDL_Renderer* r, const ash_horizon::BattleEngine& battle,
     SDL_RenderDebugText(r, 14, 12, enemyName);
     SDL_RenderDebugText(r, 14, 23, "HP");
     fill(r, 32, 25, 66, 5, 70, 70, 70);
-    fill(r, 32, 25, 66 * std::max(0, enemyHp) / ash_horizon::BattleEngine::MAX_HP,
+    fill(r, 32, 25, 66 * std::max(0, enemyHp) / std::max(1, battle.enemyMaxHp()),
          5, 70, 190, 90);
 
     fill(r, 132, 84, 100, 34, 248, 248, 225);
@@ -351,6 +351,7 @@ int main(int, char**) {
     Mode mode = party.empty() ? Mode::Starter : Mode::World;
     ash_horizon::BattleEngine battle;
     battle.setParty(&party);
+    battle.setDatabase(&pokemonDatabase);
     int selectedPartyIndex = 0;
     int selectedStarter = 0;
     int selectedBag = 0;
@@ -455,7 +456,7 @@ int main(int, char**) {
                         const auto result = ash_horizon::CaptureSystem::attempt(
                             captureBalls[selectedBall], saveData.inventory, saveData.arceusBall,
                             party, pokemonDatabase, wildDex, battle.enemyHp(),
-                            ash_horizon::BattleEngine::MAX_HP, encounterRoll(rng));
+                            battle.enemyMaxHp(), encounterRoll(rng));
                         if (result == ash_horizon::CaptureResult::Caught)
                             battle.captureSucceeded("Pokemon caught! Press E.");
                         else if (result == ash_horizon::CaptureResult::Failed)
@@ -518,9 +519,7 @@ int main(int, char**) {
                         const auto* wildSpecies = pokemonDatabase.findSpecies(wildDex);
                         if (wildSpecies) {
                             wildName = wildSpecies->name;
-                            const auto type = static_cast<ash_horizon::BattleType>(
-                                static_cast<unsigned>(wildSpecies->type1) - 1u);
-                            battle.setEnemyTypes(type, ash_horizon::BattleType::Normal, false);
+                            battle.setEnemySpecies(wildDex, 5);
                         }
                         battle.reset();
                         encounterReady = false;
