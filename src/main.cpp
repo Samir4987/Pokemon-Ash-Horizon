@@ -307,6 +307,10 @@ int main(int, char**) {
         saveData.playerX = player.x;
         saveData.playerY = player.y;
     }
+    // Persist the new save immediately so its random battle preference survives crashes.
+    if (!loadedExistingSave) {
+        ash_horizon::SaveGameStore::save(savePath, saveData, party);
+    }
 
     Mode mode = Mode::World;
     ash_horizon::BattleEngine battle;
@@ -372,6 +376,7 @@ int main(int, char**) {
             saveData.inventory.grantEverything(ash_horizon::Inventory::MAX_STACK);
             saveData.arceusBall.unlimitedTime = true;
             privateCheatApplied = true;
+            ash_horizon::SaveGameStore::save(savePath, saveData, party);
         }
 #endif
 
