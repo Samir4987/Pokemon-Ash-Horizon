@@ -91,8 +91,7 @@ public:
                 !loadedParty.restoreMemberState(i, hp, maxHp,
                     static_cast<std::uint8_t>(friendship))) return false;
         }
-        if (partyCount > 0 && activeIndex != 0 && !loadedParty.switchTo(activeIndex))
-            return false;
+        if (!loadedParty.restoreActiveIndex(activeIndex)) return false;
 
         data = loaded;
         party = loadedParty;
