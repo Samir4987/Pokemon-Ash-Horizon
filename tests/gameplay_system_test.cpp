@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include "../src/gameplay_system.hpp"
+#include "../src/save_game.hpp"
 #include <cassert>
 #include <cstdio>
 
