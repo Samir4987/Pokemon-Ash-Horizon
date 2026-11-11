@@ -130,19 +130,13 @@ void drawBattle(SDL_Renderer* r, int hp, int enemyHp, int selected,
     fill(r, 0, 100, SCREEN_W, 60, 95, 170, 90);
     // Platforms and sprite-backed battle creatures (temporary fallbacks if files are absent).
     fill(r, 142, 48, 72, 12, 115, 160, 105);
-    SDL_Texture* enemy = sprites.get(25, "normal", "front");
-    if (enemy) {
-        sprites.draw(enemy, 157, 14, 40, 38);
-    } else {
+    if (!sprites.drawPokemon(25, "normal", "front", 157, 14, 40, 38)) {
         fill(r, 162, 25, 28, 24, 225, 125, 75);
         fill(r, 168, 31, 5, 5, 255, 245, 210);
         fill(r, 180, 31, 5, 5, 255, 245, 210);
     }
     fill(r, 18, 105, 85, 13, 115, 160, 105);
-    SDL_Texture* player = sprites.get(1, "normal", "back");
-    if (player) {
-        sprites.draw(player, 38, 67, 44, 42);
-    } else {
+    if (!sprites.drawPokemon(1, "normal", "back", 38, 67, 44, 42)) {
         fill(r, 45, 76, 30, 28, 70, 115, 205);
         fill(r, 51, 82, 5, 5, 255, 255, 255);
         fill(r, 64, 82, 5, 5, 255, 255, 255);
