@@ -10,7 +10,7 @@ A small, original, GBA-inspired 2D Pokémon-style adventure prototype written in
 - Tile-based grassy route with trees, paths, and water
 - Keyboard movement and collision
 - New-game starter selection (Bulbasaur, Charmander, or Squirtle), then random encounters while walking through tall grass
-- Turn-based wild battles with a four-move menu, HP bars, type effectiveness, friendship-based attack refusal, catch attempts, and experience rewards
+- Turn-based wild battles with species-based HP and stats, a four-move menu, type effectiveness, STAB, critical hits, friendship-based attack refusal, capture attempts, and experience rewards
 - Six-slot Pokémon party with starter and wild Pokémon, individual HP, experience/level progression, active-member switching, and battle HP linked to the active Pokémon
 - One persistent save slot stores the party, HP, friendship, experience, player position, inventory, Arceus Ball timer state, and a randomized Single/Double preference; version 2 saves remain compatible with version 1 saves
 - Private Windows development build has a native top-bar **Cheats** menu with a separate code-entry window; `samfr2x` grants 999 of every currently defined item and makes the Arceus Ball timer unlimited in the saved game (the full capture mechanic is not implemented yet)
@@ -67,7 +67,7 @@ The script uses `g++ -m32`; the compiler itself must have 32-bit MinGW-w64 suppo
 ## Next milestones
 
 1. Populate the Pokédex data pack with verified Gen 1–9 species, forms, and evolution records.
-2. Connect the full stat and move database to combat; current combat still uses a small temporary move set and fixed opponent HP.
+2. Replace the four temporary moves with species-specific learnsets and add PP, status conditions, and move effects.
 3. Add status conditions, critical-hit rolls, and move effects.
 4. Add original player and Pokémon sprites and replace the remaining rectangle placeholders.
 5. Add dialogue boxes, a title screen, expanded maps, NPCs, trainer battles, and the full Pokédex data pack.
