@@ -11,6 +11,7 @@ A small, original, GBA-inspired 2D Pokémon-style adventure prototype written in
 - Keyboard movement and collision
 - Random encounters while walking through tall grass
 - A turn-based battle prototype with a four-move menu, HP bars, battle messages, type effectiveness, and friendship-based attack refusal
+- Six-slot Pokémon party with species names, levels, individual HP, active-member switching, and battle HP linked to the active Pokémon
 - Standalone Pokémon stat and damage calculation core (IVs, EVs, nature, stat stages, STAB, type multiplier, random damage factor, and critical-hit modifier)
 - Automated battle-stat unit tests run in Windows CI
 - Lazy-loaded Pokémon sprite bank with SDL3_image support for common image formats (PNG, BMP, JPEG, GIF, WebP, TGA, TIFF, QOI, and other formats enabled by the SDL3_image build)
@@ -19,7 +20,8 @@ A small, original, GBA-inspired 2D Pokémon-style adventure prototype written in
 
 - `W A S D`: move up, left, down, and right
 - In battle, `W` / `S`: move between menu rows; `A` / `D`: move between columns
-- `E`: confirm the selected battle move or continue after a battle
+- `E`: confirm a battle move, switch the selected party member, or continue after a battle
+- `T`: open or close the Pokémon party screen
 - The operating-system window close button closes the game
 
 The approved gameplay key whitelist is exactly `W E T I A S D F G H J K Z X C V B M`. Do not bind any other keyboard keys.
@@ -42,6 +44,8 @@ The script uses `g++ -m32`; the compiler itself must have 32-bit MinGW-w64 suppo
 - `src/battle_system.hpp` — battle flow, moves, friendship refusal, and attack effects
 - `src/battle_stats.hpp` — standalone Pokémon stat and damage calculation core
 - `src/pokemon_data.hpp` — lightweight species, form, evolution, and local TSV data-loading foundation
+- `src/pokemon_party.hpp` — six-slot party, Pokémon HP, levels, friendship, and switching
+- `tests/pokemon_party_test.cpp` — party storage, HP, healing, and switching tests
 - `tests/pokemon_data_test.cpp` — Pokédex data validation and loader tests
 - `tests/battle_stats_test.cpp` — unit tests for the stat calculation core
 - `build_32bit.bat` — Windows x86 build script
@@ -54,6 +58,6 @@ The script uses `g++ -m32`; the compiler itself must have 32-bit MinGW-w64 suppo
 2. Connect calculated Pokémon stats to the battle engine and replace placeholder combat values.
 3. Add status conditions, critical-hit rolls, and move effects.
 4. Add original player and Pokémon sprites and replace the remaining rectangle placeholders.
-5. Add dialogue boxes, a title screen, party management, maps, NPCs, and save data.
+5. Add dialogue boxes, a title screen, maps, NPCs, catching, and save data.
 
 This is an early playable prototype, not a complete Pokémon game.
