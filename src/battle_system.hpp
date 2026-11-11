@@ -55,11 +55,21 @@ public:
     const char* message() const { return lastMessage_; }
     const std::array<BattleMove, 4>& moves() const { return MOVES; }
     int friendship() const { return friendship_; }
+
+    // The first simple opponent is Pikachu, so its type is Electric.
+    // Later, battle setup will read these types from the Pokédex.
+    void setEnemyTypes(BattleType first, BattleType second, bool hasSecond = false) {
+        enemyType1_ = first;
+        enemyType2_ = second;
+        enemyHasSecondType_ = hasSecond;
+    }
+
     int refusalChance() const {
         if (friendship_ > 84) return 0;
         if (friendship_ >= 40) return 10;
         return 60;
     }
+
     void setFriendship(int value) {
         friendship_ = std::clamp(value, 0, 100);
     }
@@ -77,17 +87,23 @@ public:
             phase_ = BattlePhase::EnemyTurn;
             return;
         }
+
         const BattleMove& move = MOVES[static_cast<std::size_t>(selectedMove_)];
         if (roll(rng_) > move.accuracy) {
             lastMessage_ = "The attack missed!";
             phase_ = BattlePhase::EnemyTurn;
             return;
         }
-        const float multiplier = typeEffectiveness(move.type, BattleType::Normal);
+
+        const float multiplier = enemyHasSecondType_
+            ? typeEffectiveness(move.type, enemyType1_, enemyType2_)
+            : typeEffectiveness(move.type, enemyType1_);
         const int damage = std::max(1, static_cast<int>(
             (static_cast<float>(move.power) * multiplier) / 10.0f));
         enemyHp_ = std::max(0, enemyHp_ - damage);
-        lastMessage_ = multiplier > 1.0f ? "It's super effective!" :
+
+        lastMessage_ = multiplier == 0.0f ? "It had no effect!" :
+                       multiplier > 1.0f ? "It's super effective!" :
                        multiplier < 1.0f ? "It's not very effective..." : "Direct hit!";
         startAnimation(move.type);
         if (enemyHp_ == 0) {
@@ -133,6 +149,9 @@ private:
     int enemyHp_ = MAX_HP;
     int selectedMove_ = 0;
     int friendship_ = 100;
+    BattleType enemyType1_ = BattleType::Electric;
+    BattleType enemyType2_ = BattleType::Normal;
+    bool enemyHasSecondType_ = false;
     BattlePhase phase_ = BattlePhase::PlayerChoice;
     float animationTime_ = 0.0f;
     float animationDuration_ = 0.55f;
