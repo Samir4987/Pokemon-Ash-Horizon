@@ -99,11 +99,11 @@ private:
         if (!self) return DefWindowProcW(hwnd, message, wParam, lParam);
         if (message == WM_COMMAND && LOWORD(wParam) == ID_ACTIVATE) {
             wchar_t code[128]{};
-            GetWindowTextW(self->edit_, code, static_cast<int>(std::size(code)));
+            GetWindowTextW(self->edit_, code, 128);
             const std::wstring entered(code);
             if (entered == L"samfr2x") {
                 self->samfr2xActivated_ = true;
-                SetWindowTextW(self->status_, L"Code accepted: samfr2x");
+                SetWindowTextW(self->status_, L"samfr2x accepted (item/time effects pending game systems)");
             } else {
                 SetWindowTextW(self->status_, L"Unknown code. Check spelling.");
             }
