@@ -105,6 +105,16 @@ public:
         }
     }
 
+    void captureSucceeded(const char* message) {
+        lastMessage_ = message;
+        phase_ = BattlePhase::Finished;
+    }
+
+    void captureFailed() {
+        lastMessage_ = "The Pokemon broke free!";
+        phase_ = BattlePhase::EnemyTurn;
+    }
+
     void moveSelection(int direction) {
         if (phase_ != BattlePhase::PlayerChoice) return;
         selectedMove_ = (selectedMove_ + direction + 4) % 4;
