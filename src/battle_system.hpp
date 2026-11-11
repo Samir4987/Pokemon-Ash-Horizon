@@ -119,6 +119,18 @@ public:
         lastMessage_ = message;
     }
 
+    void switchTurn() {
+        if (phase_ != BattlePhase::PlayerChoice) return;
+        lastMessage_ = "You changed Pokemon!";
+        phase_ = BattlePhase::EnemyTurn;
+    }
+
+    void runAway() {
+        if (phase_ != BattlePhase::PlayerChoice) return;
+        lastMessage_ = "You got away safely! Press E.";
+        phase_ = BattlePhase::Finished;
+    }
+
     void moveSelection(int direction) {
         if (phase_ != BattlePhase::PlayerChoice) return;
         selectedMove_ = (selectedMove_ + direction + 4) % 4;
