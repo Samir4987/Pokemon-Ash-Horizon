@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <random>
 #include "type_chart.hpp"
+#include "pokemon_party.hpp"
 
 namespace ash_horizon {
 
@@ -58,13 +59,27 @@ public:
         lastMessage_ = "Choose a move!";
     }
 
-    int playerHp() const { return playerHp_; }
+    int playerHp() const {
+        const PartyPokemon* pokemon = party_ ? party_->active() : nullptr;
+        return pokemon ? pokemon->currentHp : playerHp_;
+    }
+    int playerMaxHp() const {
+        const PartyPokemon* pokemon = party_ ? party_->active() : nullptr;
+        return pokemon ? pokemon->maxHp : MAX_HP;
+    }
+    const PartyPokemon* activePokemon() const {
+        return party_ ? party_->active() : nullptr;
+    }
+    void setParty(PokemonParty* party) { party_ = party; }
     int enemyHp() const { return enemyHp_; }
     int selectedMove() const { return selectedMove_; }
     BattlePhase phase() const { return phase_; }
     const char* message() const { return lastMessage_; }
     const std::array<BattleMove, 4>& moves() const { return MOVES; }
-    int friendship() const { return friendship_; }
+    int friendship() const {
+        const PartyPokemon* pokemon = party_ ? party_->active() : nullptr;
+        return pokemon ? pokemon->friendship : friendship_;
+    }
 
     // The first simple opponent is Pikachu, so its type is Electric.
     // Later, battle setup will read these types from the Pokédex.
@@ -75,13 +90,19 @@ public:
     }
 
     int refusalChance() const {
-        if (friendship_ > 84) return 0;
-        if (friendship_ >= 40) return 10;
+        const int currentFriendship = friendship();
+        if (currentFriendship > 84) return 0;
+        if (currentFriendship >= 40) return 10;
         return 60;
     }
 
     void setFriendship(int value) {
-        friendship_ = std::clamp(value, 0, 100);
+        const int bounded = std::clamp(value, 0, 100);
+        if (party_ && party_->active()) {
+            party_->active()->friendship = static_cast<std::uint8_t>(bounded);
+        } else {
+            friendship_ = bounded;
+        }
     }
 
     void moveSelection(int direction) {
@@ -159,6 +180,7 @@ private:
     int enemyHp_ = MAX_HP;
     int selectedMove_ = 0;
     int friendship_ = 100;
+    PokemonParty* party_ = nullptr;
     BattleType enemyType1_ = BattleType::Electric;
     BattleType enemyType2_ = BattleType::Normal;
     bool enemyHasSecondType_ = false;
@@ -200,9 +222,13 @@ private:
 
     void enemyAttack() {
         if (phase_ == BattlePhase::Finished) return;
-        playerHp_ = std::max(0, playerHp_ - 8);
-        lastMessage_ = playerHp_ == 0 ? "Your Pokemon fainted!" : "The opponent attacked!";
-        phase_ = playerHp_ == 0 ? BattlePhase::Finished : BattlePhase::PlayerChoice;
+        if (party_ && party_->active()) {
+            party_->damageActive(8);
+        } else {
+            playerHp_ = std::max(0, playerHp_ - 8);
+        }
+        lastMessage_ = playerHp() == 0 ? "Your Pokemon fainted!" : "The opponent attacked!";
+        phase_ = playerHp() == 0 ? BattlePhase::Finished : BattlePhase::PlayerChoice;
     }
 };
 
