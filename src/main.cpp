@@ -12,6 +12,8 @@
 #include "living_world.hpp"
 #include "battle_system.hpp"
 #include "pokemon_sprite_bank.hpp"
+#include "pokemon_party.hpp"
+#include "pokemon_data.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -27,7 +29,7 @@ constexpr int MAP_W = 30;
 constexpr int MAP_H = 20;
 constexpr float PLAYER_SPEED = 75.0f;
 
-enum class Mode { World, Battle };
+enum class Mode { World, Battle, Party };
 
 struct Player {
     float x = 5.0f * TILE;
@@ -132,6 +134,38 @@ void drawWildCreature(SDL_Renderer* r, const ash_horizon::WildCreature& c,
     }
 }
 
+void drawParty(SDL_Renderer* r, const ash_horizon::PokemonParty& party,
+               int selectedIndex) {
+    fill(r, 0, 0, SCREEN_W, SCREEN_H, 42, 65, 83);
+    fill(r, 5, 5, 230, 150, 238, 240, 220);
+    fill(r, 5, 5, 230, 16, 35, 65, 82);
+    SDL_RenderDebugText(r, 12, 10, "POKEMON PARTY  -  W/S SELECT");
+    for (std::size_t i = 0; i < ash_horizon::PokemonParty::MAX_SIZE; ++i) {
+        const int y = 25 + static_cast<int>(i) * 20;
+        const auto* pokemon = party.member(i);
+        if (!pokemon) {
+            fill(r, 12, y, 216, 17, 218, 222, 210);
+            SDL_RenderDebugText(r, 22, y + 5, "-- EMPTY SLOT --");
+            continue;
+        }
+        const bool active = i == party.activeIndex();
+        fill(r, 12, y, 216, 17, active ? 190 : 218, active ? 225 : 222,
+             active ? 190 : 210);
+        if (static_cast<int>(i) == selectedIndex)
+            SDL_RenderDebugText(r, 15, y + 5, ">");
+        if (active) SDL_RenderDebugText(r, 27, y + 5, "*");
+        const std::string& label = pokemon->nickname.empty()
+            ? pokemon->speciesName : pokemon->nickname;
+        SDL_RenderDebugText(r, active ? 39 : 29, y + 5, label.c_str());
+        const std::string stats = "Lv" + std::to_string(pokemon->level) +
+            "  HP " + std::to_string(pokemon->currentHp) + "/" +
+            std::to_string(pokemon->maxHp);
+        SDL_RenderDebugText(r, 145, y + 5, stats.c_str());
+    }
+    fill(r, 12, 146, 216, 8, 35, 65, 82);
+    SDL_RenderDebugText(r, 17, 146, "E: SWITCH    T: BACK");
+}
+
 void drawBattle(SDL_Renderer* r, const ash_horizon::BattleEngine& battle,
                 ash_horizon::PokemonSpriteBank& sprites) {
     fill(r, 0, 0, SCREEN_W, SCREEN_H, 190, 220, 235);
@@ -146,7 +180,9 @@ void drawBattle(SDL_Renderer* r, const ash_horizon::BattleEngine& battle,
         fill(r, 180, 31, 5, 5, 255, 245, 210);
     }
     fill(r, 18, 105, 85, 13, 115, 160, 105);
-    if (!sprites.drawPokemon(1, "normal", "back", 38, 67, 44, 42)) {
+    const auto* activePokemon = battle.activePokemon();
+    const int playerDex = activePokemon ? activePokemon->nationalDex : 1;
+    if (!sprites.drawPokemon(playerDex, "normal", "back", 38, 67, 44, 42)) {
         fill(r, 45, 76, 30, 28, 70, 115, 205);
         fill(r, 51, 82, 5, 5, 255, 255, 255);
         fill(r, 64, 82, 5, 5, 255, 255, 255);
@@ -165,10 +201,11 @@ void drawBattle(SDL_Renderer* r, const ash_horizon::BattleEngine& battle,
 
     fill(r, 132, 84, 100, 34, 248, 248, 225);
     fill(r, 132, 84, 100, 2, 45, 65, 65);
-    SDL_RenderDebugText(r, 138, 88, "YOUR POKEMON");
+    const char* playerName = activePokemon ? activePokemon->speciesName.c_str() : "YOUR POKEMON";
+    SDL_RenderDebugText(r, 138, 88, playerName);
     SDL_RenderDebugText(r, 138, 99, "HP");
     fill(r, 156, 101, 66, 5, 70, 70, 70);
-    fill(r, 156, 101, 66 * std::max(0, playerHp) / ash_horizon::BattleEngine::MAX_HP,
+    fill(r, 156, 101, 66 * std::max(0, playerHp) / std::max(1, battle.playerMaxHp()),
          5, 70, 190, 90);
 
     // Battle feedback and a real 2x2 move menu.
@@ -213,8 +250,37 @@ int main(int, char**) {
     Player player;
     ash_horizon::LivingWorld livingWorld;
     ash_horizon::PokemonSpriteBank spriteBank(renderer);
+
+    // Temporary test roster until the starter-selection and encounter systems exist.
+    ash_horizon::PokemonDatabase pokemonDatabase;
+    const auto addDemoSpecies = [&pokemonDatabase](
+        std::uint16_t dex, const char* name, ash_horizon::PokemonType type,
+        int hp, int attack, int defense, int specialAttack, int specialDefense, int speed) {
+        ash_horizon::SpeciesRecord species;
+        species.nationalDex = dex;
+        species.name = name;
+        species.type1 = type;
+        species.baseStats = {
+            static_cast<std::uint16_t>(hp), static_cast<std::uint16_t>(attack),
+            static_cast<std::uint16_t>(defense), static_cast<std::uint16_t>(specialAttack),
+            static_cast<std::uint16_t>(specialDefense), static_cast<std::uint16_t>(speed)
+        };
+        species.generation = 1;
+        pokemonDatabase.addSpecies(species);
+    };
+    addDemoSpecies(1, "Bulbasaur", ash_horizon::PokemonType::Grass, 45, 49, 49, 65, 65, 45);
+    addDemoSpecies(4, "Charmander", ash_horizon::PokemonType::Fire, 39, 52, 43, 60, 50, 65);
+    addDemoSpecies(7, "Squirtle", ash_horizon::PokemonType::Water, 44, 48, 65, 50, 64, 43);
+
+    ash_horizon::PokemonParty party;
+    party.add(pokemonDatabase, 1, 5);
+    party.add(pokemonDatabase, 4, 5);
+    party.add(pokemonDatabase, 7, 5);
+
     Mode mode = Mode::World;
     ash_horizon::BattleEngine battle;
+    battle.setParty(&party);
+    int selectedPartyIndex = 0;
     bool running = true;
     bool encounterReady = true;
     std::mt19937 rng(static_cast<unsigned int>(SDL_GetTicks()));
@@ -234,7 +300,26 @@ int main(int, char**) {
             if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat) {
                 const SDL_Scancode key = event.key.scancode;
 
-                if (mode == Mode::Battle && now - lastAction > 130) {
+                if (mode == Mode::World && key == SDL_SCANCODE_T) {
+                    mode = Mode::Party;
+                    selectedPartyIndex = static_cast<int>(party.activeIndex());
+                } else if (mode == Mode::Party && now - lastAction > 130) {
+                    if (key == SDL_SCANCODE_T) {
+                        mode = Mode::World;
+                        lastAction = now;
+                    } else if (key == SDL_SCANCODE_W) {
+                        selectedPartyIndex = std::max(0, selectedPartyIndex - 1);
+                        lastAction = now;
+                    } else if (key == SDL_SCANCODE_S) {
+                        selectedPartyIndex = std::min(
+                            static_cast<int>(ash_horizon::PokemonParty::MAX_SIZE) - 1,
+                            selectedPartyIndex + 1);
+                        lastAction = now;
+                    } else if (key == SDL_SCANCODE_E) {
+                        party.switchTo(static_cast<std::size_t>(selectedPartyIndex));
+                        lastAction = now;
+                    }
+                } else if (mode == Mode::Battle && now - lastAction > 130) {
                     if (key == SDL_SCANCODE_W) { battle.moveSelection(-2); lastAction = now; }
                     else if (key == SDL_SCANCODE_S) { battle.moveSelection(2); lastAction = now; }
                     else if (key == SDL_SCANCODE_A) { battle.moveSelection(-1); lastAction = now; }
@@ -292,9 +377,11 @@ int main(int, char**) {
                 drawWildCreature(renderer, creature, cameraX, cameraY);
             }
             drawPlayer(renderer, player.x - cameraX, player.y - cameraY);
-        } else {
+        } else if (mode == Mode::Battle) {
             drawBattle(renderer, battle, spriteBank);
             battle.drawEffects(renderer);
+        } else {
+            drawParty(renderer, party, selectedPartyIndex);
         }
 
         SDL_RenderPresent(renderer);
