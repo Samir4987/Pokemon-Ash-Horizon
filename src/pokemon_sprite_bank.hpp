@@ -9,12 +9,19 @@
 
 namespace ash_horizon {
 
-// Loads sprites lazily to keep memory use modest on low-end PCs.
-// Preferred layout: assets/pokemon/0001/normal/front.<supported-image-extension>
-// Supported formats depend on the SDL3_image build; common formats include
-// PNG, BMP, JPEG, GIF, WebP, TGA, TIFF, QOI, and several others.
+// Sprite sheets keep many Pokemon sprites in one image.
+// Default layout: 64x64 cells, 16 columns, National Dex #1 at cell zero.
+// Sheets are loaded only when first needed to keep memory use low.
 class PokemonSpriteBank {
 public:
+    struct SheetConfig {
+        std::string path;
+        int spriteWidth = 64;
+        int spriteHeight = 64;
+        int columns = 16;
+        unsigned int firstDex = 1;
+    };
+
     explicit PokemonSpriteBank(SDL_Renderer* renderer) : renderer_(renderer) {}
 
     PokemonSpriteBank(const PokemonSpriteBank&) = delete;
@@ -26,50 +33,78 @@ public:
         }
     }
 
-    SDL_Texture* get(unsigned int nationalDex, const std::string& form,
-                     const std::string& view) {
-        if (!renderer_ || nationalDex == 0 || nationalDex > 1025) return nullptr;
+    // Optional: register a custom sheet layout before requesting its sprites.
+    void configureSheet(const std::string& form, const std::string& view,
+                        const std::string& path, int spriteWidth,
+                        int spriteHeight, int columns,
+                        unsigned int firstDex = 1) {
+        if (spriteWidth <= 0 || spriteHeight <= 0 || columns <= 0) return;
 
-        char number[5];
-        std::snprintf(number, sizeof(number), "%04u", nationalDex);
-        const std::string key = std::string(number) + "/" + form + "/" + view;
-        const auto found = textures_.find(key);
-        if (found != textures_.end()) return found->second;
-
-        // Try common sprite formats in a predictable order. BMP remains supported
-        // for backwards compatibility with the original asset layout.
-        static const char* extensions[] = {
-            ".png", ".bmp", ".webp", ".gif", ".jpg", ".jpeg", ".jfif",
-            ".tga", ".qoi", ".tif", ".tiff", ".avif", ".jxl",
-            ".svg", ".pnm", ".pcx", ".lbm", ".xpm", ".xcf", ".xv"
-        };
-
-        SDL_Texture* texture = nullptr;
-        for (const char* extension : extensions) {
-            const std::string path =
-                std::string("assets/pokemon/") + key + extension;
-            SDL_Surface* surface = IMG_Load(path.c_str());
-            if (!surface) continue;
-
-            texture = SDL_CreateTextureFromSurface(renderer_, surface);
-            SDL_DestroySurface(surface);
-            if (texture) break;
+        const std::string key = form + "/" + view;
+        const auto old = textures_.find(key);
+        if (old != textures_.end()) {
+            if (old->second) SDL_DestroyTexture(old->second);
+            textures_.erase(old);
         }
 
-        // Cache missing assets too, avoiding repeated disk checks every frame.
-        textures_.emplace(key, texture);
-        return texture;
+        configs_[key] = {path, spriteWidth, spriteHeight, columns, firstDex};
     }
 
-    void draw(SDL_Texture* texture, float x, float y, float width, float height) const {
-        if (!renderer_ || !texture) return;
+    bool drawPokemon(unsigned int nationalDex, const std::string& form,
+                     const std::string& view, float x, float y,
+                     float width, float height) {
+        if (!renderer_ || nationalDex == 0 || nationalDex > 1025) return false;
+
+        const std::string key = form + "/" + view;
+        SheetConfig config = defaultConfig(form, view);
+        const auto configured = configs_.find(key);
+        if (configured != configs_.end()) config = configured->second;
+
+        if (nationalDex < config.firstDex) return false;
+        const unsigned int index = nationalDex - config.firstDex;
+        const int column = static_cast<int>(index % static_cast<unsigned int>(config.columns));
+        const int row = static_cast<int>(index / static_cast<unsigned int>(config.columns));
+
+        SDL_Texture* texture = loadSheet(key, config);
+        if (!texture) return false;
+
+        SDL_FRect source{
+            static_cast<float>(column * config.spriteWidth),
+            static_cast<float>(row * config.spriteHeight),
+            static_cast<float>(config.spriteWidth),
+            static_cast<float>(config.spriteHeight)
+        };
         SDL_FRect destination{x, y, width, height};
-        SDL_RenderTexture(renderer_, texture, nullptr, &destination);
+        return SDL_RenderTexture(renderer_, texture, &source, &destination);
     }
 
 private:
     SDL_Renderer* renderer_ = nullptr;
     std::unordered_map<std::string, SDL_Texture*> textures_;
+    std::unordered_map<std::string, SheetConfig> configs_;
+
+    static SheetConfig defaultConfig(const std::string& form,
+                                     const std::string& view) {
+        SheetConfig config;
+        config.path = "assets/pokemon/sheets/" + form + "_" + view + ".png";
+        return config;
+    }
+
+    SDL_Texture* loadSheet(const std::string& key, const SheetConfig& config) {
+        const auto found = textures_.find(key);
+        if (found != textures_.end()) return found->second;
+
+        SDL_Surface* surface = IMG_Load(config.path.c_str());
+        if (!surface) {
+            textures_.emplace(key, nullptr);
+            return nullptr;
+        }
+
+        SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer_, surface);
+        SDL_DestroySurface(surface);
+        textures_.emplace(key, texture);
+        return texture;
+    }
 };
 
 } // namespace ash_horizon
