@@ -71,6 +71,10 @@ public:
 
     std::size_t size() const { return members_.size(); }
     bool empty() const { return members_.empty(); }
+    std::size_t usableCount() const {
+        return static_cast<std::size_t>(std::count_if(members_.begin(), members_.end(),
+            [](const PartyPokemon& pokemon) { return !pokemon.fainted(); }));
+    }
     std::size_t activeIndex() const { return activeIndex_; }
     const std::vector<PartyPokemon>& members() const { return members_; }
 
