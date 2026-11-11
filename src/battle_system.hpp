@@ -98,7 +98,7 @@ public:
         const float multiplier = enemyHasSecondType_
             ? typeEffectiveness(move.type, enemyType1_, enemyType2_)
             : typeEffectiveness(move.type, enemyType1_);
-        const int damage = std::max(1, static_cast<int>(
+        const int damage = multiplier == 0.0f ? 0 : std::max(1, static_cast<int>(
             (static_cast<float>(move.power) * multiplier) / 10.0f));
         enemyHp_ = std::max(0, enemyHp_ - damage);
 
