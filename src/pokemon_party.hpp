@@ -54,6 +54,21 @@ public:
         return true;
     }
 
+    bool restoreMemberState(std::size_t index, int hp, int maxHp,
+                            std::uint8_t friendship) {
+        if (index >= members_.size() || maxHp <= 0 || hp < 0 ||
+            hp > maxHp || friendship > 100) return false;
+        members_[index].currentHp = hp;
+        members_[index].maxHp = maxHp;
+        members_[index].friendship = friendship;
+        return true;
+    }
+
+    void clear() {
+        members_.clear();
+        activeIndex_ = 0;
+    }
+
     std::size_t size() const { return members_.size(); }
     bool empty() const { return members_.empty(); }
     std::size_t activeIndex() const { return activeIndex_; }
