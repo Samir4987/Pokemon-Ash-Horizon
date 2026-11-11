@@ -1,0 +1,95 @@
+/*
+ * Pokémon: Ash Horizon
+ * Copyright (C) 2026 Pokémon: Ash Horizon contributors
+ * SPDX-License-Identifier: GPL-3.0-only
+ *
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation, version 3 only. See the LICENSE file for details.
+ */
+
+#pragma once
+
+#include "pokemon_data.hpp"
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <string>
+#include <vector>
+
+namespace ash_horizon {
+
+struct PartyPokemon {
+    std::uint16_t nationalDex = 0;
+    std::string speciesName;
+    std::string nickname;
+    std::uint8_t level = 1;
+    int currentHp = 1;
+    int maxHp = 1;
+    std::uint8_t friendship = 100;
+
+    bool fainted() const { return currentHp <= 0; }
+};
+
+class PokemonParty {
+public:
+    static constexpr std::size_t MAX_SIZE = 6;
+
+    bool add(const PokemonDatabase& database, std::uint16_t nationalDex,
+             std::uint8_t level, const std::string& nickname = {}) {
+        const SpeciesRecord* species = database.findSpecies(nationalDex);
+        if (!species || level == 0 || members_.size() >= MAX_SIZE) return false;
+
+        PartyPokemon pokemon;
+        pokemon.nationalDex = nationalDex;
+        pokemon.speciesName = species->name;
+        pokemon.nickname = nickname;
+        pokemon.level = level;
+        // Simplified HP formula with IVs and EVs set to zero for this prototype.
+        pokemon.maxHp = std::max(1, ((2 * species->baseStats.hp * level) / 100)
+                                    + level + 10);
+        pokemon.currentHp = pokemon.maxHp;
+        members_.push_back(pokemon);
+        if (members_.size() == 1) activeIndex_ = 0;
+        return true;
+    }
+
+    std::size_t size() const { return members_.size(); }
+    bool empty() const { return members_.empty(); }
+    std::size_t activeIndex() const { return activeIndex_; }
+    const std::vector<PartyPokemon>& members() const { return members_; }
+
+    const PartyPokemon* member(std::size_t index) const {
+        return index < members_.size() ? &members_[index] : nullptr;
+    }
+
+    PartyPokemon* active() {
+        return empty() ? nullptr : &members_[activeIndex_];
+    }
+    const PartyPokemon* active() const {
+        return empty() ? nullptr : &members_[activeIndex_];
+    }
+
+    bool switchTo(std::size_t index) {
+        if (index >= members_.size() || index == activeIndex_ ||
+            members_[index].fainted()) return false;
+        activeIndex_ = index;
+        return true;
+    }
+
+    void damageActive(int damage) {
+        PartyPokemon* pokemon = active();
+        if (!pokemon || damage <= 0) return;
+        pokemon->currentHp = std::max(0, pokemon->currentHp - damage);
+    }
+
+    void healAll() {
+        for (auto& pokemon : members_) pokemon.currentHp = pokemon.maxHp;
+    }
+
+private:
+    std::vector<PartyPokemon> members_;
+    std::size_t activeIndex_ = 0;
+};
+
+} // namespace ash_horizon
