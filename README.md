@@ -9,12 +9,12 @@ A small, original, GBA-inspired 2D Pokémon-style adventure prototype written in
 - GBA-like 240×160 logical resolution, scaled for a desktop window
 - Tile-based grassy route with trees, paths, and water
 - Keyboard movement and collision
-- Random encounters while walking through tall grass
-- A turn-based battle prototype with a four-move menu, HP bars, battle messages, type effectiveness, and friendship-based attack refusal
-- Six-slot Pokémon party with species names, levels, individual HP, active-member switching, and battle HP linked to the active Pokémon
-- One persistent prototype save slot stores the party, HP, friendship, player position, inventory, Arceus Ball timer state, and a randomized Single/Double preference; a party with fewer than two usable Pokémon resolves to Single
+- New-game starter selection (Bulbasaur, Charmander, or Squirtle), then random encounters while walking through tall grass
+- Turn-based wild battles with a four-move menu, HP bars, type effectiveness, friendship-based attack refusal, catch attempts, and experience rewards
+- Six-slot Pokémon party with starter and wild Pokémon, individual HP, experience/level progression, active-member switching, and battle HP linked to the active Pokémon
+- One persistent save slot stores the party, HP, friendship, experience, player position, inventory, Arceus Ball timer state, and a randomized Single/Double preference; version 2 saves remain compatible with version 1 saves
 - Private Windows development build has a native top-bar **Cheats** menu with a separate code-entry window; `samfr2x` grants 999 of every currently defined item and makes the Arceus Ball timer unlimited in the saved game (the full capture mechanic is not implemented yet)
-- Temporary demo roster currently starts with Bulbasaur, Charmander, and Squirtle; starter selection and catching are not implemented yet
+- Bag menu supports Potion, Super Potion, and Revive use; capture and item rules have standalone unit tests
 - Standalone Pokémon stat and damage calculation core (IVs, EVs, nature, stat stages, STAB, type multiplier, random damage factor, and critical-hit modifier)
 - Automated battle-stat, Pokédex, party, battle-format, and save/inventory unit tests run in Windows CI
 - Lazy-loaded Pokémon sprite bank with SDL3_image support for common image formats (PNG, BMP, JPEG, GIF, WebP, TGA, TIFF, QOI, and other formats enabled by the SDL3_image build)
@@ -24,7 +24,7 @@ A small, original, GBA-inspired 2D Pokémon-style adventure prototype written in
 - `W A S D`: move up, left, down, and right
 - In battle, `W` / `S`: move between menu rows; `A` / `D`: move between columns
 - `E`: confirm a battle move, switch the selected party member, or continue after a battle
-- `T`: open or close the Pokémon party screen
+- `T`: open or close the Pokémon party screen (or leave the Bag)\n- `I`: open the Bag\n- `F`: throw a Poké Ball during a wild battle
 - The operating-system window close button closes the game
 
 The approved gameplay key whitelist is exactly `W E T I A S D F G H J K Z X C V B M`. Do not bind any other keyboard keys.
@@ -63,9 +63,9 @@ The script uses `g++ -m32`; the compiler itself must have 32-bit MinGW-w64 suppo
 ## Next milestones
 
 1. Populate the Pokédex data pack with verified Gen 1–9 species, forms, and evolution records.
-2. Connect calculated Pokémon stats to the battle engine and replace placeholder combat values.
+2. Connect the full stat and move database to combat; current combat still uses a small temporary move set and fixed opponent HP.
 3. Add status conditions, critical-hit rolls, and move effects.
 4. Add original player and Pokémon sprites and replace the remaining rectangle placeholders.
-5. Add dialogue boxes, a title screen, maps, NPCs, catching, and save data.
+5. Add dialogue boxes, a title screen, expanded maps, NPCs, trainer battles, and the full Pokédex data pack.
 
-This is an early playable prototype, not a complete Pokémon game.
+This is an early playable gameplay slice, not a complete Pokémon game. Starter selection, basic wild capture, item healing/revival, experience progression, and save persistence are connected; trainer battles, the full Pokédex, full move sets, evolution, and the complete Double Battle engine are still unfinished.
