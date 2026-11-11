@@ -311,6 +311,10 @@ int main(int, char**) {
     if (!loadedExistingSave) {
         ash_horizon::SaveGameStore::save(savePath, saveData, party);
     }
+#ifdef _WIN32
+    privateCheatApplied = saveData.privateSamfr2xActive;
+    privateCheatMenu.setSamfr2xActivated(saveData.privateSamfr2xActive);
+#endif
 
     Mode mode = Mode::World;
     ash_horizon::BattleEngine battle;
@@ -375,6 +379,7 @@ int main(int, char**) {
         if (!privateCheatApplied && privateCheatMenu.samfr2xActivated()) {
             saveData.inventory.grantEverything(ash_horizon::Inventory::MAX_STACK);
             saveData.arceusBall.unlimitedTime = true;
+            saveData.privateSamfr2xActive = true;
             privateCheatApplied = true;
             ash_horizon::SaveGameStore::save(savePath, saveData, party);
         }
