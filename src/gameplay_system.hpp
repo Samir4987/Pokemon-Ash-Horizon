@@ -67,11 +67,11 @@ public:
             arceusTimer.startCountdown(30000);
         if (inventory.quantity(ball) == 0) return CaptureResult::NoBall;
         inventory.remove(ball);
-        if (ball == ItemId::ArceusBall) arceusTimer.stop();
         if (std::clamp(rollPercent, 1, 100) > chancePercent(ball, currentHp, maxHp))
             return CaptureResult::Failed;
-        return party.add(database, targetDex, 5)
-            ? CaptureResult::Caught : CaptureResult::PartyFull;
+        if (!party.add(database, targetDex, 5)) return CaptureResult::PartyFull;
+        if (ball == ItemId::ArceusBall) arceusTimer.stop();
+        return CaptureResult::Caught;
     }
 };
 
