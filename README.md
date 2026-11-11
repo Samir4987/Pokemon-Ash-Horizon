@@ -12,8 +12,9 @@ A small, original, GBA-inspired 2D Pokémon-style adventure prototype written in
 - Random encounters while walking through tall grass
 - A turn-based battle prototype with a four-move menu, HP bars, battle messages, type effectiveness, and friendship-based attack refusal
 - Six-slot Pokémon party with species names, levels, individual HP, active-member switching, and battle HP linked to the active Pokémon
+- Temporary demo roster currently starts with Bulbasaur, Charmander, and Squirtle; starter selection and catching are not implemented yet
 - Standalone Pokémon stat and damage calculation core (IVs, EVs, nature, stat stages, STAB, type multiplier, random damage factor, and critical-hit modifier)
-- Automated battle-stat unit tests run in Windows CI
+- Automated battle-stat, Pokédex, and party unit tests run in Windows CI
 - Lazy-loaded Pokémon sprite bank with SDL3_image support for common image formats (PNG, BMP, JPEG, GIF, WebP, TGA, TIFF, QOI, and other formats enabled by the SDL3_image build)
 
 ## Controls
