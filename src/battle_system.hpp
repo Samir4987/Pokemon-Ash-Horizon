@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <random>
 #include "type_chart.hpp"
+#include "battle_stats.hpp"
 #include "pokemon_party.hpp"
 
 namespace ash_horizon {
@@ -50,7 +51,8 @@ public:
     BattleEngine() : rng_(0xA5A2026u) { reset(); }
 
     void reset() {
-        playerHp_ = enemyHp_ = MAX_HP;
+        playerHp_ = MAX_HP;
+        enemyHp_ = enemyMaxHp_;
         phase_ = BattlePhase::PlayerChoice;
         selectedMove_ = 0;
         animationTime_ = 0.0f;
@@ -72,6 +74,20 @@ public:
     }
     void setParty(PokemonParty* party) { party_ = party; }
     int enemyHp() const { return enemyHp_; }
+    int enemyMaxHp() const { return enemyMaxHp_; }
+    void setDatabase(const PokemonDatabase* database) { database_ = database; }
+
+    void setEnemySpecies(std::uint16_t dex, std::uint8_t level) {
+        enemyDex_ = dex;
+        enemyLevel_ = std::clamp<int>(level, 1, 100);
+        const SpeciesRecord* species = database_ ? database_->findSpecies(dex) : nullptr;
+        if (!species) return;
+        enemyType1_ = toBattleType(species->type1);
+        enemyHasSecondType_ = species->type2 != PokemonType::None;
+        enemyType2_ = enemyHasSecondType_ ? toBattleType(species->type2) : BattleType::Normal;
+        enemyStats_ = calculateStats(species, enemyLevel_);
+        enemyMaxHp_ = std::max(1, enemyStats_.hp);
+    }
     int selectedMove() const { return selectedMove_; }
     BattlePhase phase() const { return phase_; }
     const char* message() const { return lastMessage_; }
@@ -152,14 +168,33 @@ public:
             return;
         }
 
+        const PartyPokemon* attacker = party_ ? party_->active() : nullptr;
+        const SpeciesRecord* attackerSpecies = attacker && database_
+            ? database_->findSpecies(attacker->nationalDex) : nullptr;
+        const BattleStats attackerStats = calculateStats(
+            attackerSpecies, attacker ? attacker->level : 5);
+        const BattleMove& move = MOVES[static_cast<std::size_t>(selectedMove_)];
         const float multiplier = enemyHasSecondType_
             ? typeEffectiveness(move.type, enemyType1_, enemyType2_)
             : typeEffectiveness(move.type, enemyType1_);
-        const int damage = multiplier == 0.0f ? 0 : std::max(1, static_cast<int>(
-            (static_cast<float>(move.power) * multiplier) / 10.0f));
+        const int attackStat = move.category == MoveClass::Physical
+            ? attackerStats.attack : attackerStats.specialAttack;
+        const int defenseStat = move.category == MoveClass::Physical
+            ? enemyStats_.defense : enemyStats_.specialDefense;
+        const bool stab = attackerSpecies &&
+            (toBattleType(attackerSpecies->type1) == move.type ||
+             (attackerSpecies->type2 != PokemonType::None &&
+              toBattleType(attackerSpecies->type2) == move.type));
+        std::uniform_real_distribution<float> damageRoll(0.85f, 1.0f);
+        std::uniform_int_distribution<int> criticalRoll(1, 24);
+        const bool critical = criticalRoll(rng_) == 1;
+        const int damage = calculateDamage(attacker ? attacker->level : 5,
+            move.power, attackStat, defenseStat, stab, multiplier,
+            damageRoll(rng_), critical);
         enemyHp_ = std::max(0, enemyHp_ - damage);
 
         lastMessage_ = multiplier == 0.0f ? "It had no effect!" :
+                       critical ? "A critical hit!" :
                        multiplier > 1.0f ? "It's super effective!" :
                        multiplier < 1.0f ? "It's not very effective..." : "Direct hit!";
         startAnimation(move.type);
@@ -204,6 +239,11 @@ public:
 private:
     int playerHp_ = MAX_HP;
     int enemyHp_ = MAX_HP;
+    int enemyMaxHp_ = MAX_HP;
+    std::uint16_t enemyDex_ = 0;
+    int enemyLevel_ = 5;
+    const PokemonDatabase* database_ = nullptr;
+    BattleStats enemyStats_{50, 50, 50, 50, 50, 50};
     int selectedMove_ = 0;
     int friendship_ = 100;
     PokemonParty* party_ = nullptr;
@@ -246,14 +286,65 @@ private:
         }
     }
 
+    static BattleType toBattleType(PokemonType type) {
+        if (type == PokemonType::None) return BattleType::Normal;
+        return static_cast<BattleType>(static_cast<unsigned>(type) - 1u);
+    }
+
+    static BattleStats calculateStats(const SpeciesRecord* species, int level) {
+        StatInputs input;
+        input.level = level;
+        if (species) {
+            input.baseHp = species->baseStats.hp;
+            input.baseAttack = species->baseStats.attack;
+            input.baseDefense = species->baseStats.defense;
+            input.baseSpecialAttack = species->baseStats.specialAttack;
+            input.baseSpecialDefense = species->baseStats.specialDefense;
+            input.baseSpeed = species->baseStats.speed;
+        } else {
+            input.baseHp = 45; input.baseAttack = 49; input.baseDefense = 49;
+            input.baseSpecialAttack = 65; input.baseSpecialDefense = 65;
+            input.baseSpeed = 45;
+        }
+        return calculateBattleStats(input);
+    }
+
     void enemyAttack() {
         if (phase_ == BattlePhase::Finished) return;
-        if (party_ && party_->active()) {
-            party_->damageActive(8);
-        } else {
-            playerHp_ = std::max(0, playerHp_ - 8);
-        }
-        lastMessage_ = playerHp() == 0 ? "Your Pokemon fainted!" : "The opponent attacked!";
+        const PartyPokemon* defender = party_ ? party_->active() : nullptr;
+        const SpeciesRecord* defenderSpecies = defender && database_
+            ? database_->findSpecies(defender->nationalDex) : nullptr;
+        const SpeciesRecord* attackerSpecies = database_
+            ? database_->findSpecies(enemyDex_) : nullptr;
+        const BattleStats defenderStats = calculateStats(
+            defenderSpecies, defender ? defender->level : 5);
+        const BattleMove& move = MOVES[static_cast<std::size_t>(rng_() % MOVES.size())];
+        const int attackStat = move.category == MoveClass::Physical
+            ? enemyStats_.attack : enemyStats_.specialAttack;
+        const int defenseStat = move.category == MoveClass::Physical
+            ? defenderStats.defense : defenderStats.specialDefense;
+        const BattleType defend1 = defenderSpecies
+            ? toBattleType(defenderSpecies->type1) : BattleType::Normal;
+        const bool hasSecond = defenderSpecies &&
+            defenderSpecies->type2 != PokemonType::None;
+        const BattleType defend2 = hasSecond
+            ? toBattleType(defenderSpecies->type2) : BattleType::Normal;
+        const float multiplier = hasSecond
+            ? typeEffectiveness(move.type, defend1, defend2)
+            : typeEffectiveness(move.type, defend1);
+        const bool stab = attackerSpecies &&
+            (toBattleType(attackerSpecies->type1) == move.type ||
+             (attackerSpecies->type2 != PokemonType::None &&
+              toBattleType(attackerSpecies->type2) == move.type));
+        std::uniform_real_distribution<float> damageRoll(0.85f, 1.0f);
+        std::uniform_int_distribution<int> criticalRoll(1, 24);
+        const bool critical = criticalRoll(rng_) == 1;
+        const int damage = calculateDamage(enemyLevel_, move.power, attackStat,
+            defenseStat, stab, multiplier, damageRoll(rng_), critical);
+        if (party_ && defender) party_->damageActive(damage);
+        else playerHp_ = std::max(0, playerHp_ - damage);
+        lastMessage_ = playerHp() == 0 ? "Your Pokemon fainted!" :
+            critical ? "The opponent scored a critical hit!" : "The opponent attacked!";
         phase_ = playerHp() == 0 ? BattlePhase::Finished : BattlePhase::PlayerChoice;
     }
 };
