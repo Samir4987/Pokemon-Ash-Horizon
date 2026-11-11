@@ -44,7 +44,7 @@ int main() {
     assert(party.member(0)->currentHp>0);
 
     const auto oldLevel=party.member(0)->level;
-    assert(ProgressionSystem::award(party,0,db,1000));
+    assert(ProgressionSystem::award(party,0,db,5000));
     assert(party.member(0)->level>oldLevel);
     assert(party.member(0)->experience<ProgressionSystem::experienceForNextLevel(
         party.member(0)->level));
