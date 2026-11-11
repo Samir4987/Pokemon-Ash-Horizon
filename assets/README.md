@@ -1,42 +1,53 @@
-# Ash Horizon asset pipeline
+# Ash Horizon sprite-sheet assets
 
-The game uses a lazy-loading sprite bank. It loads only the images currently requested,
-which helps keep memory use low on the target 32-bit / 2 GB PC.
+The game loads sprite sheets lazily. Each sheet contains many equal-sized sprite cells;
+the loader calculates the correct cell from the National Pokédex number. It does not
+require one image file per Pokémon.
 
-## Pokémon sprite paths
+## Default Pokémon sprite sheets
 
-Use one folder per National Pokédex number, zero-padded to four digits:
+Put sheets here:
 
 ```
-assets/pokemon/0001/normal/front.bmp
-assets/pokemon/0001/normal/back.bmp
-assets/pokemon/0001/normal/overworld.bmp
-assets/pokemon/0025/normal/front.bmp
-assets/pokemon/0025/normal/back.bmp
-assets/pokemon/0025/normal/overworld.bmp
-assets/pokemon/0025/shiny/front.bmp
-assets/pokemon/0025/shiny/back.bmp
-assets/pokemon/0025/shiny/overworld.bmp
-assets/pokemon/0025/alolan/front.bmp
+assets/pokemon/sheets/normal_front.png
+assets/pokemon/sheets/normal_back.png
+assets/pokemon/sheets/normal_overworld.png
+assets/pokemon/sheets/shiny_front.png
+assets/pokemon/sheets/shiny_back.png
+assets/pokemon/sheets/shiny_overworld.png
+assets/pokemon/sheets/alolan_front.png
 ```
 
-- Supported National Dex range in the loader: 1–1025 (Generations 1–9).
-- Form names are folder names such as `normal`, `shiny`, `alolan`, or a project-defined regional form.
-- Views are `front`, `back`, and `overworld`.
-- Files are BMP for the initial SDL3-only pipeline; convert approved source art to BMP before adding it.
-- Keep source art at native pixel-art resolution; do not upscale it in the asset files.
-- Missing sprites are safely reported as unavailable so the game can use a temporary fallback.
-- Textures are loaded on demand and cached; the bank releases them on shutdown.
+Default sheet layout:
 
-## Asset rights and provenance
+- Each cell is 64 × 64 pixels.
+- There are 16 columns.
+- National Dex #1 is the first cell (top-left).
+- National Dex #2 is the next cell to its right, continuing row by row.
+- The loader supports National Dex numbers 1–1025.
+- Missing sheets use the game's temporary fallback graphics.
 
-This repository does not bundle ripped official Pokémon artwork. Add original artwork,
-user-created artwork, or assets whose license explicitly permits the intended use. Keep
-a source and license note alongside any third-party pack. The loader supports the complete
-Gen 1–9 index, but the sprite files themselves must be supplied and checked in separately.
+If your sheet uses another cell size or column count, register it in code before the
+first sprite request with `PokemonSpriteBank::configureSheet(form, view, path,
+spriteWidth, spriteHeight, columns, firstDex)`.
+
+Example:
+
+```cpp
+spriteBank.configureSheet("normal", "front",
+    "assets/pokemon/sheets/all_front.png", 80, 80, 12);
+```
+
+The sheet is loaded once and cached. Individual sprite files are not needed.
 
 ## Other assets
 
-- `assets/sprites/` — player and NPC sprites
-- `assets/tilesets/` — route, town, and interior tiles
+- `assets/sprites/` — player and NPC sprite sheets
+- `assets/tilesets/` — route, town, and interior tilesets
 - `assets/audio/` — music and sound effects
+
+## Asset rights and provenance
+
+Add original artwork, user-created artwork, or assets whose license explicitly permits
+the intended use. Keep a source and license note alongside third-party asset packs.
+The loader supports the Gen 1–9 Pokédex index; sprite artwork must be supplied separately.
