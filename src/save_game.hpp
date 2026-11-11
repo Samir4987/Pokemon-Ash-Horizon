@@ -20,6 +20,7 @@ struct SaveGameData {
     SaveBattleRules battleRules{};
     Inventory inventory{};
     ArceusBallState arceusBall{};
+    bool privateSamfr2xActive = false;
     float playerX = 80.0f;
     float playerY = 128.0f;
 };
@@ -35,7 +36,8 @@ public:
         out << std::setprecision(9) << data.playerX << ' ' << data.playerY << '\n';
         out << (data.arceusBall.unlimitedTime ? 1 : 0) << ' '
             << data.arceusBall.remainingMilliseconds << ' '
-            << (data.arceusBall.inUse ? 1 : 0) << '\n';
+            << (data.arceusBall.inUse ? 1 : 0) << ' '
+            << (data.privateSamfr2xActive ? 1 : 0) << '\n';
         for (std::uint16_t quantity : data.inventory.quantities())
             out << quantity << ' ';
         out << '\n' << party.size() << ' ' << party.activeIndex() << '\n';
@@ -59,12 +61,14 @@ public:
 
         SaveGameData loaded;
         if (!SaveBattleRules::deserialize(serializedRules, loaded.battleRules)) return false;
-        int unlimited = 0, inUse = 0;
+        int unlimited = 0, inUse = 0, privateCheat = 0;
         if (!(in >> loaded.playerX >> loaded.playerY >> unlimited
-                 >> loaded.arceusBall.remainingMilliseconds >> inUse)) return false;
-        if ((unlimited != 0 && unlimited != 1) || (inUse != 0 && inUse != 1)) return false;
+                 >> loaded.arceusBall.remainingMilliseconds >> inUse >> privateCheat)) return false;
+        if ((unlimited != 0 && unlimited != 1) || (inUse != 0 && inUse != 1) ||
+            (privateCheat != 0 && privateCheat != 1)) return false;
         loaded.arceusBall.unlimitedTime = unlimited != 0;
         loaded.arceusBall.inUse = inUse != 0;
+        loaded.privateSamfr2xActive = privateCheat != 0;
 
         for (std::size_t i = 0; i < Inventory::ITEM_COUNT; ++i) {
             unsigned quantity = 0;
