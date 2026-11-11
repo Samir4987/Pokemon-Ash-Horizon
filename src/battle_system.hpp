@@ -115,6 +115,10 @@ public:
         phase_ = BattlePhase::EnemyTurn;
     }
 
+    void captureUnavailable(const char* message) {
+        lastMessage_ = message;
+    }
+
     void moveSelection(int direction) {
         if (phase_ != BattlePhase::PlayerChoice) return;
         selectedMove_ = (selectedMove_ + direction + 4) % 4;
