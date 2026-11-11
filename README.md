@@ -10,7 +10,7 @@ A small, original, GBA-inspired 2D Pokémon-style adventure prototype written in
 - Tile-based grassy route with trees, paths, and water
 - Keyboard movement and collision
 - Random encounters while walking through tall grass
-- A simple turn-based battle prototype with Attack and Run
+- A turn-based battle prototype with a four-move menu, HP bars, battle messages, type effectiveness, and friendship-based attack refusal
 - Standalone Pokémon stat and damage calculation core (IVs, EVs, nature, stat stages, STAB, type multiplier, random damage factor, and critical-hit modifier)
 - Automated battle-stat unit tests run in Windows CI
 - Lazy-loaded Pokémon sprite bank with SDL3_image support for common image formats (PNG, BMP, JPEG, GIF, WebP, TGA, TIFF, QOI, and other formats enabled by the SDL3_image build)
@@ -22,7 +22,7 @@ A small, original, GBA-inspired 2D Pokémon-style adventure prototype written in
 - `E`: confirm the selected battle move or continue after a battle
 - The operating-system window close button closes the game
 
-Only `W E T I A S D F G H J K L Z X C V B M` are approved for future gameplay bindings.
+The approved gameplay key whitelist is exactly `W E T I A S D F G H J K Z X C V B M`. Do not bind any other keyboard keys.
 
 ## Build on 32-bit Windows
 
@@ -52,9 +52,8 @@ The script uses `g++ -m32`; the compiler itself must have 32-bit MinGW-w64 suppo
 
 1. Populate the Pokédex data pack with verified Gen 1–9 species, forms, and evolution records.
 2. Connect calculated Pokémon stats to the battle engine and replace placeholder combat values.
-3. Add the complete 18-type effectiveness chart and dual-type handling.
-4. Add status conditions, critical-hit rolls, and move effects.
-5. Add original player and Pokémon sprites.
-6. Add dialogue boxes, a title screen, party management, maps, NPCs, and save data.
+3. Add status conditions, critical-hit rolls, and move effects.
+4. Add original player and Pokémon sprites and replace the remaining rectangle placeholders.
+5. Add dialogue boxes, a title screen, party management, maps, NPCs, and save data.
 
 This is an early playable prototype, not a complete Pokémon game.
