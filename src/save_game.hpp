@@ -7,6 +7,7 @@
 
 #include "battle_format.hpp"
 #include "inventory.hpp"
+#include "move_data.hpp"
 #include "pokemon_party.hpp"
 #include <algorithm>
 #include <cstdint>
@@ -31,7 +32,7 @@ public:
                      const PokemonParty& party) {
         std::ofstream out(path, std::ios::trunc);
         if (!out) return false;
-        out << "ASH_HORIZON_SAVE 2\n";
+        out << "ASH_HORIZON_SAVE 3\n";
         out << std::quoted(data.battleRules.serialize()) << '\n';
         out << std::setprecision(9) << data.playerX << ' ' << data.playerY << '\n';
         out << (data.arceusBall.unlimitedTime ? 1 : 0) << ' '
@@ -46,6 +47,11 @@ public:
                 << ' ' << pokemon.currentHp << ' ' << pokemon.maxHp << ' '
                 << static_cast<unsigned>(pokemon.friendship) << ' '
                 << pokemon.experience << ' ' << std::quoted(pokemon.nickname) << '\n';
+            out << static_cast<unsigned>(pokemon.moveCount);
+            for (std::size_t move = 0; move < 4; ++move)
+                out << ' ' << pokemon.moveIds[move] << ' '
+                    << static_cast<unsigned>(pokemon.movePp[move]);
+            out << '\n';
         }
         return static_cast<bool>(out);
     }
@@ -57,8 +63,11 @@ public:
 
         std::string header, serializedRules;
         if (!std::getline(in, header) ||
-            (header != "ASH_HORIZON_SAVE 1" && header != "ASH_HORIZON_SAVE 2")) return false;
-        const bool hasExperience = header == "ASH_HORIZON_SAVE 2";
+            (header != "ASH_HORIZON_SAVE 1" && header != "ASH_HORIZON_SAVE 2" &&
+             header != "ASH_HORIZON_SAVE 3")) return false;
+        const bool hasExperience = header == "ASH_HORIZON_SAVE 2" ||
+                                   header == "ASH_HORIZON_SAVE 3";
+        const bool hasMoves = header == "ASH_HORIZON_SAVE 3";
         if (!(in >> std::quoted(serializedRules))) return false;
 
         SaveGameData loaded;
@@ -99,6 +108,27 @@ public:
                 !loadedParty.restoreMemberState(i, hp, maxHp,
                     static_cast<std::uint8_t>(friendship))) return false;
             loadedParty.member(i)->experience = experience;
+            initializeMoveSet(*loadedParty.member(i));
+            if (hasMoves) {
+                unsigned moveCount = 0;
+                std::array<std::uint16_t, 4> moveIds{{0, 0, 0, 0}};
+                std::array<std::uint8_t, 4> movePp{{0, 0, 0, 0}};
+                if (!(in >> moveCount) || moveCount > 4) return false;
+                for (std::size_t move = 0; move < 4; ++move) {
+                    unsigned id = 0, pp = 0;
+                    if (!(in >> id >> pp) || id > 65535 || pp > 255) return false;
+                    if (move < moveCount) {
+                        const MoveDefinition* definition = findMoveDefinition(id);
+                        if (!definition || pp > definition->maxPp) return false;
+                    } else if (id != 0 || pp != 0) {
+                        return false;
+                    }
+                    moveIds[move] = static_cast<std::uint16_t>(id);
+                    movePp[move] = static_cast<std::uint8_t>(pp);
+                }
+                if (!loadedParty.restoreMoveState(i, static_cast<std::uint8_t>(moveCount),
+                                                  moveIds, movePp)) return false;
+            }
         }
         if (!loadedParty.restoreActiveIndex(activeIndex)) return false;
 
