@@ -12,6 +12,7 @@
 
 #include "pokemon_data.hpp"
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -28,6 +29,9 @@ struct PartyPokemon {
     int maxHp = 1;
     std::uint8_t friendship = 100;
     std::uint32_t experience = 0;
+    std::array<std::uint16_t, 4> moveIds{{0, 0, 0, 0}};
+    std::array<std::uint8_t, 4> movePp{{0, 0, 0, 0}};
+    std::uint8_t moveCount = 0;
 
     bool fainted() const { return currentHp <= 0; }
 };
