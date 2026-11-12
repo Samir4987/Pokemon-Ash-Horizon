@@ -6,6 +6,7 @@
 #pragma once
 
 #include "type_chart.hpp"
+#include "pokemon_party.hpp"
 #include <array>
 #include <cstdint>
 
@@ -51,6 +52,21 @@ inline std::array<std::uint16_t, 4> defaultMoveIds(std::uint16_t dex) {
     case 4: return {{5, 2, 6, 1}};
     case 7: return {{1, 8, 7, 9}};
     default: return {{1, 0, 0, 0}};
+    }
+}
+
+inline void initializeMoveSet(PartyPokemon& pokemon) {
+    pokemon.moveIds = defaultMoveIds(pokemon.nationalDex);
+    pokemon.moveCount = 0;
+    for (std::size_t i = 0; i < pokemon.moveIds.size(); ++i) {
+        const MoveDefinition* move = findMoveDefinition(pokemon.moveIds[i]);
+        if (!move) {
+            pokemon.moveIds[i] = 0;
+            pokemon.movePp[i] = 0;
+            continue;
+        }
+        pokemon.movePp[i] = move->maxPp;
+        ++pokemon.moveCount;
     }
 }
 
