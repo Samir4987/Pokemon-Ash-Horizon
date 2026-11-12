@@ -69,6 +69,16 @@ public:
         return true;
     }
 
+    bool restoreMoveState(std::size_t index, std::uint8_t count,
+                          const std::array<std::uint16_t, 4>& ids,
+                          const std::array<std::uint8_t, 4>& pp) {
+        if (index >= members_.size() || count > 4) return false;
+        members_[index].moveCount = count;
+        members_[index].moveIds = ids;
+        members_[index].movePp = pp;
+        return true;
+    }
+
     bool restoreActiveIndex(std::size_t index) {
         if (index >= members_.size()) return members_.empty() && index == 0;
         activeIndex_ = index;
