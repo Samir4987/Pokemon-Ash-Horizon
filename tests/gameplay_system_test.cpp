@@ -24,6 +24,10 @@ int main() {
     PokemonParty party;
     assert(StarterSelection::choose(1,db,party));
     assert(party.size()==1 && party.active()->nationalDex==4);
+    assert(party.active()->moveCount == 4);
+    assert(party.active()->moveIds[0] == static_cast<std::uint16_t>(MoveId::Scratch));
+    assert(party.active()->movePp[0] == 35);
+    party.active()->movePp[0] = 14;
     assert(!StarterSelection::choose(0,db,party));
 
     Inventory bag; bag.add(ItemId::PokeBall,2); bag.add(ItemId::Potion,1);
@@ -34,6 +38,8 @@ int main() {
     assert(CaptureSystem::attempt(ItemId::PokeBall,bag,timer,party,db,1,5,maxHp,1)
            ==CaptureResult::Caught);
     assert(party.size()==2 && bag.quantity(ItemId::PokeBall)==1);
+    assert(party.member(1)->moveCount == 4);
+    assert(party.member(1)->moveIds[2] == static_cast<std::uint16_t>(MoveId::VineWhip));
     assert(CaptureSystem::chancePercent(ItemId::MasterBall,40,40)==100);
     bag.add(ItemId::ArceusBall,1);
     ArceusBallState timedBall;
@@ -67,6 +73,10 @@ int main() {
     assert(SaveGameStore::load(path,loaded,loadedParty,db));
     assert(loadedParty.member(0)->experience==party.member(0)->experience);
     assert(loadedParty.member(0)->level==party.member(0)->level);
+    assert(loadedParty.member(0)->moveCount == party.member(0)->moveCount);
+    assert(loadedParty.member(0)->moveIds == party.member(0)->moveIds);
+    assert(loadedParty.member(0)->movePp == party.member(0)->movePp);
+    assert(loadedParty.member(0)->movePp[0] == 14);
     std::remove(path);
     return 0;
 }
