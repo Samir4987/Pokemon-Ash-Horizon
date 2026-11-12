@@ -10,9 +10,10 @@ A small, original, GBA-inspired 2D Pokémon-style adventure prototype written in
 - Tile-based grassy route with trees, paths, and water
 - Keyboard movement and collision
 - New-game starter selection (Bulbasaur, Charmander, or Squirtle), then random encounters while walking through tall grass
-- Turn-based wild battles with species-based HP and stats, a four-move menu, type effectiveness, STAB, critical hits, friendship-based attack refusal, capture attempts, and experience rewards
+- Turn-based wild battles with species-based HP and stats, type effectiveness, STAB, critical hits, friendship-based attack refusal, capture attempts, and experience rewards
+- Authored four-slot starter move sets for Bulbasaur, Charmander, and Squirtle, with a small move catalogue and individual PP values stored per Pokémon
 - Six-slot Pokémon party with starter and wild Pokémon, individual HP, experience/level progression, active-member switching, and battle HP linked to the active Pokémon
-- One persistent save slot stores the party, HP, friendship, experience, player position, inventory, Arceus Ball timer state, and a randomized Single/Double preference; version 2 saves remain compatible with version 1 saves
+- One persistent save slot stores the party, HP, friendship, experience, move slots and PP, player position, inventory, Arceus Ball timer state, and a randomized Single/Double preference; versions 1 and 2 remain compatible
 - Private Windows development build has a native top-bar **Cheats** menu with a separate code-entry window; `samfr2x` grants 999 of every currently defined item and makes the Arceus Ball timer unlimited in the saved game (the full capture mechanic is not implemented yet)
 - Bag menu supports Potion, Super Potion, and Revive use; capture and item rules have standalone unit tests
 - Standalone Pokémon stat and damage calculation core (IVs, EVs, nature, stat stages, STAB, type multiplier, random damage factor, and critical-hit modifier)
@@ -67,9 +68,9 @@ The script uses `g++ -m32`; the compiler itself must have 32-bit MinGW-w64 suppo
 ## Next milestones
 
 1. Populate the Pokédex data pack with verified Gen 1–9 species, forms, and evolution records.
-2. Replace the four temporary moves with species-specific learnsets and add PP, status conditions, and move effects.
+2. Connect the authored species move sets and PP to battle selection, then add status conditions and move effects.
 3. Add status conditions, critical-hit rolls, and move effects.
 4. Add original player and Pokémon sprites and replace the remaining rectangle placeholders.
 5. Add dialogue boxes, a title screen, expanded maps, NPCs, trainer battles, and the full Pokédex data pack.
 
-This is an early playable gameplay slice, not a complete Pokémon game. Starter selection, basic wild capture, item healing/revival, experience progression, and save persistence are connected; trainer battles, the full Pokédex, full move sets, evolution, and the complete Double Battle engine are still unfinished.
+This is an early playable gameplay slice, not a complete Pokémon game. Starter selection, basic wild capture, item healing/revival, experience progression, and save persistence are connected; trainer battles, the full Pokédex, battle-connected move selection and PP use, move-learning progression, status conditions, trainer battles, evolution, and the complete Double Battle engine are still unfinished.
