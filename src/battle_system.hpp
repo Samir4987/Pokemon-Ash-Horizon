@@ -45,6 +45,8 @@ public:
         animationTime_ = 0.0f;
         animationDuration_ = 0.0f;
         particleCount_ = 0;
+        enemyAttackStage_ = 0;
+        enemyDefenseStage_ = 0;
         lastMessage_ = "Choose a move!";
     }
 
@@ -178,18 +180,30 @@ public:
             return;
         }
 
-        const PartyPokemon* attacker = party_ ? party_->active() : nullptr;
         const SpeciesRecord* attackerSpecies = attacker && database_
             ? database_->findSpecies(attacker->nationalDex) : nullptr;
         const BattleStats attackerStats = calculateStats(
             attackerSpecies, attacker ? attacker->level : 5);
+        if (move.category == MoveClass::Status) {
+            if (move.id == MoveId::Growl) {
+                enemyAttackStage_ = std::max(-6, enemyAttackStage_ - 1);
+                lastMessage_ = "The wild Pokemon's Attack fell!";
+            } else if (move.id == MoveId::TailWhip) {
+                enemyDefenseStage_ = std::max(-6, enemyDefenseStage_ - 1);
+                lastMessage_ = "The wild Pokemon's Defense fell!";
+            } else {
+                lastMessage_ = "Nothing happened!";
+            }
+            phase_ = BattlePhase::EnemyTurn;
+            return;
+        }
         const float multiplier = enemyHasSecondType_
             ? typeEffectiveness(move.type, enemyType1_, enemyType2_)
             : typeEffectiveness(move.type, enemyType1_);
         const int attackStat = move.category == MoveClass::Physical
             ? attackerStats.attack : attackerStats.specialAttack;
         const int defenseStat = move.category == MoveClass::Physical
-            ? enemyStats_.defense : enemyStats_.specialDefense;
+            ? applyStatStage(enemyStats_.defense, enemyDefenseStage_) : enemyStats_.specialDefense;
         const bool stab = attackerSpecies &&
             (toBattleType(attackerSpecies->type1) == move.type ||
              (attackerSpecies->type2 != PokemonType::None &&
@@ -254,7 +268,9 @@ private:
     const PokemonDatabase* database_ = nullptr;
     BattleStats enemyStats_{50, 50, 50, 50, 50, 50};
     int selectedMove_ = 0;
-    int friendship_ = 100;\n    int enemyAttackStage_ = 0;\n    int enemyDefenseStage_ = 0;
+    int friendship_ = 100;
+    int enemyAttackStage_ = 0;
+    int enemyDefenseStage_ = 0;
     PokemonParty* party_ = nullptr;
     BattleType enemyType1_ = BattleType::Electric;
     BattleType enemyType2_ = BattleType::Normal;
@@ -341,7 +357,7 @@ private:
             static_cast<std::uint16_t>(MoveId::Tackle));
         const BattleMove& move = *selectedEnemyMove;
         const int attackStat = move.category == MoveClass::Physical
-            ? applyStatStage(enemyStats_.attack, 0) : enemyStats_.specialAttack;
+            ? applyStatStage(enemyStats_.attack, enemyAttackStage_) : enemyStats_.specialAttack;
         const int defenseStat = move.category == MoveClass::Physical
             ? defenderStats.defense : defenderStats.specialDefense;
         const BattleType defend1 = defenderSpecies
