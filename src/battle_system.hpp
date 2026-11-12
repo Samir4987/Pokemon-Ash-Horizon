@@ -19,10 +19,10 @@
 #include "type_chart.hpp"
 #include "battle_stats.hpp"
 #include "pokemon_party.hpp"
+#include "move_data.hpp"
 
 namespace ash_horizon {
 
-enum class MoveClass : std::uint8_t { Physical, Special, Status };
 enum class BattlePhase : std::uint8_t { PlayerChoice, AttackAnimation, EnemyTurn, Finished };
 
 struct BattleMove {
