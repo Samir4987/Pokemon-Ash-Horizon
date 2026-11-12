@@ -10,6 +10,29 @@
 int main() {
     using namespace ash_horizon;
 
+    PlayerProfile profile;
+    assert(profile.name() == "Trainer");
+    assert(profile.gender() == PlayerGender::Unselected);
+    assert(profile.setName("Samir"));
+    assert(!profile.setName(""));
+    assert(!profile.setName("TrainerNameTooLong"));
+    assert(!profile.setName("Bad/Name"));
+    assert(profile.setGender(PlayerGender::Male));
+    assert(!profile.setGender(static_cast<PlayerGender>(3)));
+
+    PlayerWallet wallet;
+    assert(wallet.earnPokeDollars(30000));
+    assert(wallet.earnHC(10));
+    assert(wallet.earnShards(2));
+    assert(wallet.spendPokeDollars(30000));
+    assert(wallet.pokeDollars() == 0);
+    assert(!wallet.spendPokeDollars(1));
+    assert(wallet.earnPokeDollars(PlayerWallet::MAX_POKE_DOLLARS));
+    assert(!wallet.earnPokeDollars(1));
+    assert(wallet.pokeDollars() == PlayerWallet::MAX_POKE_DOLLARS);
+    assert(wallet.restore(30000, 10, 2));
+    assert(!wallet.restore(PlayerWallet::MAX_POKE_DOLLARS + 1u, 0, 0));
+
     PokemonDatabase database;
     SpeciesRecord species;
     species.nationalDex = 1;
@@ -27,6 +50,11 @@ int main() {
 
     SaveGameData data;
     data.battleRules = SaveBattleRules{987654u, BattleStyle::Double};
+    assert(data.profile.setName("Samir"));
+    assert(data.profile.setGender(PlayerGender::Male));
+    assert(data.wallet.earnPokeDollars(30000));
+    assert(data.wallet.earnHC(10));
+    assert(data.wallet.earnShards(2));
     data.inventory.grantEverything(Inventory::MAX_STACK);
     assert(data.inventory.quantity(ItemId::MasterBall) == 999);
     assert(data.inventory.quantity(ItemId::ArceusBall) == 999);
@@ -47,6 +75,11 @@ int main() {
     assert(SaveGameStore::load(path, loaded, loadedParty, database));
     assert(loaded.battleRules.seed == data.battleRules.seed);
     assert(loaded.battleRules.preferredStyle == BattleStyle::Double);
+    assert(loaded.profile.name() == "Samir");
+    assert(loaded.profile.gender() == PlayerGender::Male);
+    assert(loaded.wallet.pokeDollars() == 30000);
+    assert(loaded.wallet.hc() == 10);
+    assert(loaded.wallet.shards() == 2);
     assert(loaded.inventory.quantity(ItemId::Potion) == 997);
     assert(loaded.inventory.quantity(ItemId::MasterBall) == 999);
     assert(loaded.inventory.quantity(ItemId::ArceusBall) == 999);
