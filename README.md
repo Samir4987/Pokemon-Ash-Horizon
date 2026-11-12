@@ -13,7 +13,7 @@ A small, original, GBA-inspired 2D Pokémon-style adventure prototype written in
 - Turn-based wild battles with species-based HP and stats, type effectiveness, STAB, critical hits, friendship-based attack refusal, capture attempts, and experience rewards
 - Authored four-slot starter move sets for Bulbasaur, Charmander, and Squirtle, with a small move catalogue and individual PP values stored per Pokémon
 - Six-slot Pokémon party with starter and wild Pokémon, individual HP, experience/level progression, active-member switching, and battle HP linked to the active Pokémon
-- One persistent save slot stores the party, HP, friendship, experience, move slots and PP, player position, inventory, Arceus Ball timer state, and a randomized Single/Double preference; versions 1 and 2 remain compatible
+- One persistent save slot stores the trainer profile, gender selection, PokeDollars, HC, Shards, party, HP, friendship, experience, move slots and PP, player position, inventory, Arceus Ball timer state, and a randomized Single/Double preference; save versions 1–3 remain compatible
 - Private Windows development build has a native top-bar **Cheats** menu with a separate code-entry window; `samfr2x` grants 999 of every currently defined item and makes the Arceus Ball timer unlimited in the saved game (the full capture mechanic is not implemented yet)
 - Bag menu supports Potion, Super Potion, and Revive use; capture and item rules have standalone unit tests
 - Standalone Pokémon stat and damage calculation core (IVs, EVs, nature, stat stages, STAB, type multiplier, random damage factor, and critical-hit modifier)
@@ -54,11 +54,12 @@ The script uses `g++ -m32`; the compiler itself must have 32-bit MinGW-w64 suppo
 - `src/pokemon_data.hpp` — lightweight species, form, evolution, and local TSV data-loading foundation
 - `src/pokemon_party.hpp` — six-slot party, Pokémon HP, levels, friendship, and switching
 - `src/battle_format.hpp` — per-save randomized Single/Double preference and party-size constraints
+- `src/player_profile.hpp` — trainer name, gender, and the three-currency wallet model
 - `src/inventory.hpp` — item quantities and Arceus Ball timer state
-- `src/save_game.hpp` — persistent save serialization for battle rules, party, inventory, position, and timer state
+- `src/save_game.hpp` — persistent save serialization for profile, currencies, battle rules, party, inventory, position, and timer state
 - `src/private_cheat_menu.hpp` — private-build native desktop Cheats menu and separate code-entry window
 - `tests/pokemon_party_test.cpp` — party storage, HP, healing, and switching tests
-- `tests/save_game_test.cpp` — save/load, inventory, and Arceus Ball timer tests
+- `tests/save_game_test.cpp` — save/load, profile, wallet, inventory, and Arceus Ball timer tests
 - `tests/pokemon_data_test.cpp` — Pokédex data validation and loader tests
 - `tests/battle_stats_test.cpp` — unit tests for the stat calculation core
 - `build_32bit.bat` — Windows x86 build script
@@ -67,10 +68,11 @@ The script uses `g++ -m32`; the compiler itself must have 32-bit MinGW-w64 suppo
 
 ## Next milestones
 
-1. Populate the Pokédex data pack with verified Gen 1–9 species, forms, and evolution records.
-2. Connect the authored species move sets and PP to battle selection, then add status conditions and move effects.
-3. Add status conditions, critical-hit rolls, and move effects.
-4. Add original player and Pokémon sprites and replace the remaining rectangle placeholders.
-5. Add dialogue boxes, a title screen, expanded maps, NPCs, trainer battles, and the full Pokédex data pack.
+1. Add the new-game trainer name and gender selection screen, then expose the wallet in the game UI.
+2. Add Shards and HC as earnable/spendable progression resources, plus ordinary PokeDollar rewards and shops.
+3. Build the first town and route-transition system, then expand to the 4th Gym City and its NPCs.
+4. Add gym missions, badge-gated field moves, and the Hagemony story progression.
+5. Populate the Pokédex data pack with verified Gen 1–9 species, forms, and evolution records.
+6. Add original player and Pokémon sprites and replace the remaining rectangle placeholders.
 
-This is an early playable gameplay slice, not a complete Pokémon game. Starter selection, basic wild capture, item healing/revival, experience progression, and save persistence are connected; trainer battles, the full Pokédex, battle-connected move selection and PP use, move-learning progression, status conditions, trainer battles, evolution, and the complete Double Battle engine are still unfinished.
+This is an early playable gameplay slice, not a complete Pokémon game. Starter selection, basic wild capture, item healing/revival, experience progression, and save persistence are connected. The trainer profile and wallet are now part of the save-data foundation; their in-game selection and display screens are still pending. Trainer battles, the full Pokédex, move-learning progression, status conditions, evolution, and the complete Double Battle engine are also unfinished.
