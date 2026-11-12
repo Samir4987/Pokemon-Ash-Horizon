@@ -260,7 +260,11 @@ void drawBattle(SDL_Renderer* r, const ash_horizon::BattleEngine& battle,
         if (i == selected) {
             SDL_RenderDebugText(r, moveX[i] - 10.0f, moveY[i], ">");
         }
-        SDL_RenderDebugText(r, moveX[i], moveY[i], moves[static_cast<std::size_t>(i)].name);
+        const std::size_t slot = static_cast<std::size_t>(i);
+        const std::string moveLabel = std::string(moves[slot].name) + " " +
+            std::to_string(battle.movePp(slot)) + "/" +
+            std::to_string(moves[slot].maxPp);
+        SDL_RenderDebugText(r, moveX[i], moveY[i], moveLabel.c_str());
     }
 }
 
