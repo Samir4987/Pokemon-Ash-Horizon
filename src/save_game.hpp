@@ -8,6 +8,7 @@
 #include "battle_format.hpp"
 #include "inventory.hpp"
 #include "move_data.hpp"
+#include "player_profile.hpp"
 #include "pokemon_party.hpp"
 #include <algorithm>
 #include <cstdint>
@@ -19,6 +20,8 @@ namespace ash_horizon {
 
 struct SaveGameData {
     SaveBattleRules battleRules{};
+    PlayerProfile profile{};
+    PlayerWallet wallet{};
     Inventory inventory{};
     ArceusBallState arceusBall{};
     bool privateSamfr2xActive = false;
@@ -32,8 +35,12 @@ public:
                      const PokemonParty& party) {
         std::ofstream out(path, std::ios::trunc);
         if (!out) return false;
-        out << "ASH_HORIZON_SAVE 3\n";
+        out << "ASH_HORIZON_SAVE 4\n";
         out << std::quoted(data.battleRules.serialize()) << '\n';
+        out << std::quoted(data.profile.name()) << ' '
+            << static_cast<unsigned>(data.profile.gender()) << '\n';
+        out << data.wallet.pokeDollars() << ' ' << data.wallet.hc() << ' '
+            << data.wallet.shards() << '\n';
         out << std::setprecision(9) << data.playerX << ' ' << data.playerY << '\n';
         out << (data.arceusBall.unlimitedTime ? 1 : 0) << ' '
             << data.arceusBall.remainingMilliseconds << ' '
@@ -64,14 +71,27 @@ public:
         std::string header, serializedRules;
         if (!std::getline(in, header) ||
             (header != "ASH_HORIZON_SAVE 1" && header != "ASH_HORIZON_SAVE 2" &&
-             header != "ASH_HORIZON_SAVE 3")) return false;
+             header != "ASH_HORIZON_SAVE 3" && header != "ASH_HORIZON_SAVE 4"))
+            return false;
         const bool hasExperience = header == "ASH_HORIZON_SAVE 2" ||
-                                   header == "ASH_HORIZON_SAVE 3";
-        const bool hasMoves = header == "ASH_HORIZON_SAVE 3";
+                                   header == "ASH_HORIZON_SAVE 3" ||
+                                   header == "ASH_HORIZON_SAVE 4";
+        const bool hasMoves = header == "ASH_HORIZON_SAVE 3" ||
+                              header == "ASH_HORIZON_SAVE 4";
+        const bool hasProfileAndWallet = header == "ASH_HORIZON_SAVE 4";
         if (!(in >> std::quoted(serializedRules))) return false;
 
         SaveGameData loaded;
         if (!SaveBattleRules::deserialize(serializedRules, loaded.battleRules)) return false;
+        if (hasProfileAndWallet) {
+            std::string playerName;
+            unsigned gender = 0;
+            std::uint32_t pokeDollars = 0, hc = 0, shards = 0;
+            if (!(in >> std::quoted(playerName) >> gender >> pokeDollars >> hc >> shards) ||
+                !loaded.profile.restore(playerName, gender) ||
+                !loaded.wallet.restore(pokeDollars, hc, shards)) return false;
+        }
+
         int unlimited = 0, inUse = 0, privateCheat = 0;
         if (!(in >> loaded.playerX >> loaded.playerY >> unlimited
                  >> loaded.arceusBall.remainingMilliseconds >> inUse >> privateCheat)) return false;
