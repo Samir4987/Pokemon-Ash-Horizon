@@ -6,6 +6,7 @@
 #pragma once
 
 #include "inventory.hpp"
+#include "move_data.hpp"
 #include "pokemon_party.hpp"
 #include "type_chart.hpp"
 #include <algorithm>
@@ -29,7 +30,9 @@ public:
     static bool choose(std::size_t index, const PokemonDatabase& database,
                        PokemonParty& party, std::uint8_t level = 5) {
         if (index >= 3 || !party.empty()) return false;
-        return party.add(database, OPTIONS[index].dex, level);
+        if (!party.add(database, OPTIONS[index].dex, level)) return false;
+        initializeMoveSet(*party.member(party.size() - 1));
+        return true;
     }
 };
 
@@ -70,6 +73,7 @@ public:
         if (std::clamp(rollPercent, 1, 100) > chancePercent(ball, currentHp, maxHp))
             return CaptureResult::Failed;
         if (!party.add(database, targetDex, 5)) return CaptureResult::PartyFull;
+        initializeMoveSet(*party.member(party.size() - 1));
         if (ball == ItemId::ArceusBall) arceusTimer.stop();
         return CaptureResult::Caught;
     }
