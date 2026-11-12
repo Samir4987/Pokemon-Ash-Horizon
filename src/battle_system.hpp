@@ -25,13 +25,7 @@ namespace ash_horizon {
 
 enum class BattlePhase : std::uint8_t { PlayerChoice, AttackAnimation, EnemyTurn, Finished };
 
-struct BattleMove {
-    const char* name;
-    BattleType type;
-    MoveClass category;
-    int power;
-    int accuracy;
-};
+using BattleMove = MoveDefinition;
 
 struct BattleParticle {
     float x, y, vx, vy, life, maxLife;
@@ -41,13 +35,6 @@ struct BattleParticle {
 class BattleEngine {
 public:
     static constexpr int MAX_HP = 100;
-    static constexpr std::array<BattleMove, 4> MOVES{{
-        {"Tackle", BattleType::Normal, MoveClass::Physical, 40, 100},
-        {"Ember", BattleType::Fire, MoveClass::Special, 40, 100},
-        {"Water Gun", BattleType::Water, MoveClass::Special, 40, 100},
-        {"Thunder Shock", BattleType::Electric, MoveClass::Special, 40, 100}
-    }};
-
     BattleEngine() : rng_(0xA5A2026u) { reset(); }
 
     void reset() {
@@ -91,7 +78,22 @@ public:
     int selectedMove() const { return selectedMove_; }
     BattlePhase phase() const { return phase_; }
     const char* message() const { return lastMessage_; }
-    const std::array<BattleMove, 4>& moves() const { return MOVES; }
+    std::array<BattleMove, 4> moves() const {
+        std::array<BattleMove, 4> result{};
+        const PartyPokemon* pokemon = party_ ? party_->active() : nullptr;
+        const MoveDefinition* fallback = findMoveDefinition(
+            static_cast<std::uint16_t>(MoveId::Tackle));
+        for (std::size_t i = 0; i < result.size(); ++i) {
+            const MoveDefinition* definition = pokemon && i < pokemon->moveCount
+                ? findMoveDefinition(pokemon->moveIds[i]) : nullptr;
+            result[i] = definition ? *definition : *fallback;
+        }
+        return result;
+    }
+    int movePp(std::size_t index) const {
+        const PartyPokemon* pokemon = party_ ? party_->active() : nullptr;
+        return pokemon && index < pokemon->moveCount ? pokemon->movePp[index] : 0;
+    }
     int friendship() const {
         const PartyPokemon* pokemon = party_ ? party_->active() : nullptr;
         return pokemon ? pokemon->friendship : friendship_;
@@ -160,7 +162,16 @@ public:
             return;
         }
 
-        const BattleMove& move = MOVES[static_cast<std::size_t>(selectedMove_)];
+        PartyPokemon* attacker = party_ ? party_->active() : nullptr;
+        const std::array<BattleMove, 4> availableMoves = moves();
+        const BattleMove& move = availableMoves[static_cast<std::size_t>(selectedMove_)];
+        if (attacker && (static_cast<std::size_t>(selectedMove_) >= attacker->moveCount ||
+                         attacker->movePp[static_cast<std::size_t>(selectedMove_)] == 0)) {
+            lastMessage_ = "No PP left!";
+            return;
+        }
+        if (attacker)
+            --attacker->movePp[static_cast<std::size_t>(selectedMove_)];
         if (roll(rng_) > move.accuracy) {
             lastMessage_ = "The attack missed!";
             phase_ = BattlePhase::EnemyTurn;
@@ -243,7 +254,7 @@ private:
     const PokemonDatabase* database_ = nullptr;
     BattleStats enemyStats_{50, 50, 50, 50, 50, 50};
     int selectedMove_ = 0;
-    int friendship_ = 100;
+    int friendship_ = 100;\n    int enemyAttackStage_ = 0;\n    int enemyDefenseStage_ = 0;
     PokemonParty* party_ = nullptr;
     BattleType enemyType1_ = BattleType::Electric;
     BattleType enemyType2_ = BattleType::Normal;
@@ -316,9 +327,21 @@ private:
             ? database_->findSpecies(enemyDex_) : nullptr;
         const BattleStats defenderStats = calculateStats(
             defenderSpecies, defender ? defender->level : 5);
-        const BattleMove& move = MOVES[static_cast<std::size_t>(rng_() % MOVES.size())];
+        const auto enemyMoveIds = defaultMoveIds(enemyDex_);
+        const MoveDefinition* selectedEnemyMove = nullptr;
+        for (std::size_t attempt = 0; attempt < enemyMoveIds.size(); ++attempt) {
+            const std::size_t slot = static_cast<std::size_t>(rng_() % enemyMoveIds.size());
+            const MoveDefinition* candidate = findMoveDefinition(enemyMoveIds[slot]);
+            if (candidate && candidate->category != MoveClass::Status) {
+                selectedEnemyMove = candidate;
+                break;
+            }
+        }
+        if (!selectedEnemyMove) selectedEnemyMove = findMoveDefinition(
+            static_cast<std::uint16_t>(MoveId::Tackle));
+        const BattleMove& move = *selectedEnemyMove;
         const int attackStat = move.category == MoveClass::Physical
-            ? enemyStats_.attack : enemyStats_.specialAttack;
+            ? applyStatStage(enemyStats_.attack, 0) : enemyStats_.specialAttack;
         const int defenseStat = move.category == MoveClass::Physical
             ? defenderStats.defense : defenderStats.specialDefense;
         const BattleType defend1 = defenderSpecies
