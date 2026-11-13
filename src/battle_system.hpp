@@ -20,6 +20,7 @@
 #include "battle_stats.hpp"
 #include "pokemon_party.hpp"
 #include "move_data.hpp"
+#include "friendship_rules.hpp"
 
 namespace ash_horizon {
 
@@ -109,10 +110,7 @@ public:
     }
 
     int refusalChance() const {
-        const int currentFriendship = friendship();
-        if (currentFriendship > 84) return 0;
-        if (currentFriendship >= 40) return 10;
-        return 60;
+        return attackRefusalChance(friendship());
     }
 
     void setFriendship(int value) {

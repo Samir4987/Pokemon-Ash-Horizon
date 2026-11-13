@@ -31,6 +31,12 @@ jobs:
             mingw-w64-i686-gcc
             unzip
 
+      - name: Run friendship refusal rule unit tests
+        run: |
+          set -euxo pipefail
+          g++ -std=c++17 -O2 -Wall -Wextra tests/friendship_rules_test.cpp -o friendship_rules_test.exe
+          ./friendship_rules_test.exe
+
       - name: Run battle stat unit tests
         run: |
           set -euxo pipefail
