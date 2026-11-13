@@ -29,11 +29,13 @@ int main() {
     assert(party.size()==1 && party.active()->nationalDex==4);
     assert(party.active()->moveCount == 4);
     PokemonParty friendshipParty;
-    assert(StarterSelection::choose(1,db,friendshipParty));
+    // Use Bulbasaur as the initial member so the complete test party is
+    // exactly Bulbasaur (46), Charizard (98), and Squirtle (22).
+    assert(StarterSelection::choose(0,db,friendshipParty));
     assert(addFriendshipTestTeam(db,friendshipParty));
     assert(friendshipParty.size()==3);
-    assert(friendshipParty.member(0)->nationalDex==4 && friendshipParty.member(0)->friendship==98);
-    assert(friendshipParty.member(1)->nationalDex==1 && friendshipParty.member(1)->friendship==46);
+    assert(friendshipParty.member(0)->nationalDex==1 && friendshipParty.member(0)->friendship==46);
+    assert(friendshipParty.member(1)->nationalDex==6 && friendshipParty.member(1)->friendship==98);
     assert(friendshipParty.member(2)->nationalDex==7 && friendshipParty.member(2)->friendship==22);
     assert(friendshipParty.member(1)->moveCount==4 && friendshipParty.member(2)->moveCount==4);
     assert(!addFriendshipTestTeam(db,friendshipParty));
