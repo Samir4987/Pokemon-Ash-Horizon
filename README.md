@@ -9,7 +9,9 @@ A small, original, GBA-inspired 2D Pokémon-style adventure prototype written in
 - GBA-like 240×160 logical resolution, scaled for a desktop window
 - Tile-based grassy route with trees, paths, and water
 - Keyboard movement and collision
-- New-game starter selection (Bulbasaur, Charmander, or Squirtle), then random encounters while walking through tall grass
+- New-game trainer setup with a typed name (up to 12 characters) and male/female selection, followed by starter selection (Bulbasaur, Charmander, or Squirtle)
+- On-screen wallet display for PokeDollars, HC, and Shards; the currencies are saved but earning and spending rewards are not connected yet
+- Random encounters while walking through tall grass
 - Turn-based wild battles with species-based HP and stats, type effectiveness, STAB, critical hits, friendship-based attack refusal, capture attempts, and experience rewards
 - Authored four-slot starter move sets for Bulbasaur, Charmander, and Squirtle, with a small move catalogue and individual PP values stored per Pokémon
 - Six-slot Pokémon party with starter and wild Pokémon, individual HP, experience/level progression, active-member switching, and battle HP linked to the active Pokémon
@@ -68,11 +70,11 @@ The script uses `g++ -m32`; the compiler itself must have 32-bit MinGW-w64 suppo
 
 ## Next milestones
 
-1. Add the new-game trainer name and gender selection screen, then expose the wallet in the game UI.
+1. Add player appearance and hair-style choices to the trainer setup.
 2. Add Shards and HC as earnable/spendable progression resources, plus ordinary PokeDollar rewards and shops.
-3. Build the first town and route-transition system, then expand to the 4th Gym City and its NPCs.
+3. Build the Astralis Region town and route-transition system from the approved map, then expand to Silverpeak Town and its NPCs.
 4. Add gym missions, badge-gated field moves, and the Hagemony story progression.
 5. Populate the Pokédex data pack with verified Gen 1–9 species, forms, and evolution records.
 6. Add original player and Pokémon sprites and replace the remaining rectangle placeholders.
 
-This is an early playable gameplay slice, not a complete Pokémon game. Starter selection, basic wild capture, item healing/revival, experience progression, and save persistence are connected. The trainer profile and wallet are now part of the save-data foundation; their in-game selection and display screens are still pending. Trainer battles, the full Pokédex, move-learning progression, status conditions, evolution, and the complete Double Battle engine are also unfinished.
+This is an early playable gameplay slice, not a complete Pokémon game. Starter selection, basic wild capture, item healing/revival, experience progression, and save persistence are connected. The trainer name/gender setup and wallet display are connected to the game; appearance customization and currency earning/spending systems are still pending. Trainer battles, the full Pokédex, move-learning progression, status conditions, evolution, and the complete Double Battle engine are also unfinished.
