@@ -9,7 +9,7 @@ A small, original, GBA-inspired 2D Pokémon-style adventure prototype written in
 - GBA-like 240×160 logical resolution, scaled for a desktop window
 - Tile-based grassy route with trees, paths, and water
 - Keyboard movement and collision
-- New-game trainer setup with a typed name (up to 12 characters) and male/female selection, followed by starter selection (Bulbasaur, Charmander, or Squirtle)
+- New-game trainer setup with a character-grid name selector (up to 12 characters) and male/female selection, followed by starter selection (Bulbasaur, Charmander, or Squirtle)
 - On-screen wallet display for PokeDollars, HC, and Shards; the currencies are saved but earning and spending rewards are not connected yet
 - Random encounters while walking through tall grass
 - Turn-based wild battles with species-based HP and stats, type effectiveness, STAB, critical hits, friendship-based attack refusal, capture attempts, and experience rewards
@@ -24,17 +24,31 @@ A small, original, GBA-inspired 2D Pokémon-style adventure prototype written in
 
 ## Controls
 
-- `W A S D`: move around the world
-- In battle, `W` / `S`: move between move-menu rows; `A` / `D`: move between columns
-- `E`: confirm a move, confirm a starter, use a Bag item, switch a selected party member, or continue after battle
-- `T`: open the party from the world, close the Bag/party screen, or switch to the next party Pokémon during battle (uses the opponent turn)
-- `I`: open the Bag
-- `F`: throw the selected capture ball during a wild battle
-- `Z`: cycle Poké Ball, Great Ball, Ultra Ball, Master Ball, and Arceus Ball
-- `G`: attempt to escape a wild battle
-- The operating-system window close button closes the game
+Ash Horizon uses the user's mGBA-style keyboard layout:
 
-The approved gameplay key whitelist is exactly `W E T I A S D F G H J K Z X C V B M`. Do not bind any other keyboard keys.
+| Game Boy Advance control | Keyboard key |
+|---|---|
+| D-Pad | `W A S D` |
+| A | `X` |
+| B | `Z` |
+| L trigger | `C` |
+| R trigger | `F` |
+| Select | `V` |
+| Start | `M` |
+
+### Context-sensitive actions
+
+- `W A S D`: move in the world and navigate menus; in battle, move the selected move cursor.
+- `X` (A): confirm, interact/select, add a character during trainer setup, use an item, switch a party member, or choose a battle move.
+- `Z` (B): go back, delete the last trainer-name character, or attempt to flee from a wild battle.
+- `C` (L): cycle the selected capture ball during battle.
+- `F` (R): attempt to throw the selected capture ball during battle.
+- `V` (Select): toggle trainer gender during setup or quickly open the Pokémon party from the world.
+- `M` (Start): confirm the trainer profile or open the in-game menu from the world.
+- In the in-game menu, use `W/S` to choose Bag, Pokémon Party, or Resume; `X` selects and `Z` returns.
+- The operating-system window close button closes the game.
+
+Only the keys listed in the controller table are used for gameplay input.
 
 ## Build on 32-bit Windows
 
