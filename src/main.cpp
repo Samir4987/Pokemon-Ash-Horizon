@@ -153,14 +153,16 @@ void drawProfileSetup(SDL_Renderer* r, const std::string& name, int gender) {
     SDL_RenderDebugText(r, 18, 133, "TYPE NAME  TAB: GENDER  ENTER: OK");
 }
 
-void drawWallet(SDL_Renderer* r, const ash_horizon::PlayerWallet& wallet) {
-    fill(r, 3, 3, 91, 31, 25, 45, 60);
+void drawWallet(SDL_Renderer* r, const ash_horizon::PlayerProfile& profile,
+                const ash_horizon::PlayerWallet& wallet) {
+    fill(r, 3, 3, 126, 40, 25, 45, 60);
+    SDL_RenderDebugText(r, 7, 6, profile.name().c_str());
     const std::string money = "P$ " + std::to_string(wallet.pokeDollars());
     const std::string hc = "HC " + std::to_string(wallet.hc());
     const std::string shards = "SH " + std::to_string(wallet.shards());
-    SDL_RenderDebugText(r, 7, 6, money.c_str());
-    SDL_RenderDebugText(r, 7, 15, hc.c_str());
-    SDL_RenderDebugText(r, 7, 24, shards.c_str());
+    SDL_RenderDebugText(r, 7, 15, money.c_str());
+    SDL_RenderDebugText(r, 7, 24, hc.c_str());
+    SDL_RenderDebugText(r, 7, 33, shards.c_str());
 }
 
 void drawStarter(SDL_Renderer* r, int selected) {
@@ -614,7 +616,7 @@ int main(int, char**) {
                 drawWildCreature(renderer, creature, cameraX, cameraY);
             }
             drawPlayer(renderer, player.x - cameraX, player.y - cameraY);
-            drawWallet(renderer, saveData.wallet);
+            drawWallet(renderer, saveData.profile, saveData.wallet);
         } else if (mode == Mode::Battle) {
             drawBattle(renderer, battle, spriteBank, wildDex, wildName.c_str());
             battle.drawEffects(renderer);
