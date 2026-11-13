@@ -50,6 +50,7 @@ inline std::array<std::uint16_t, 4> defaultMoveIds(std::uint16_t dex) {
     switch (dex) {
     case 1: return {{1, 2, 3, 4}};
     case 4: return {{5, 2, 6, 1}};
+    case 6: return {{6, 5, 2, 1}}; // Charizard: Ember, Scratch, Growl, Tackle.
     case 7: return {{1, 8, 7, 9}};
     default: return {{1, 0, 0, 0}};
     }
