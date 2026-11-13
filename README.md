@@ -18,7 +18,10 @@ A small, original, GBA-inspired 2D Pokémon-style adventure prototype written in
 - Friendship test squad added without replacing existing party members when space allows: Bulbasaur (46%), Charizard (98%), and Squirtle (22%); party screen displays friendship percentages for refusal testing
 - One persistent save slot stores the trainer profile, gender selection, PokeDollars, HC, Shards, party, HP, friendship, experience, move slots and PP, player position, inventory, Arceus Ball timer state, and a randomized Single/Double preference; save versions 1–3 remain compatible
 - Private Windows development build has a native top-bar **Cheats** menu with a separate code-entry window; `samfr2x` grants 999 of every currently defined item and makes the Arceus Ball timer unlimited in the saved game (the full capture mechanic is not implemented yet)
-- Bag menu supports Potion, Super Potion, and Revive use; capture and item rules have standalone unit tests
+- Bag menu supports Potion, Super Potion, and Revive use on a selected party member; two Revives are included in a new save
+- The first playable route includes a Pokémon Center; interact with it using X to heal the full party, and the most recently visited Center is saved as the emergency return point
+- If every party Pokémon faints, the player is returned to that Center and the party is fully healed; ordinary battle endings do not heal Pokémon
+- Trainer setup requires an explicit gender selection with V before M can confirm the profile; party, profile, bag, and battle text use a readable foreground colour
 - Standalone Pokémon stat and damage calculation core (IVs, EVs, nature, stat stages, STAB, type multiplier, random damage factor, and critical-hit modifier)
 - Automated battle-stat, Pokédex, party, battle-format, and save/inventory unit tests run in Windows CI
 - Lazy-loaded Pokémon sprite bank with SDL3_image support for common image formats (PNG, BMP, JPEG, GIF, WebP, TGA, TIFF, QOI, and other formats enabled by the SDL3_image build)
@@ -44,7 +47,8 @@ Ash Horizon uses the user's mGBA-style keyboard layout:
 - `Z` (B): go back, delete the last trainer-name character, or attempt to flee from a wild battle.
 - `C` (L): cycle the selected capture ball during battle.
 - `F` (R): attempt to throw the selected capture ball during battle.
-- `V` (Select): toggle trainer gender during setup or quickly open the Pokémon party from the world.
+- `V` (Select): choose trainer gender during setup or quickly open the Pokémon party from the world.
+- In the Bag, `A/D` changes the selected party member; `X` uses the selected item on that member.
 - `M` (Start): confirm the trainer profile or open the in-game menu from the world.
 - In the in-game menu, use `W/S` to choose Bag, Pokémon Party, or Resume; `X` selects and `Z` returns.
 - The operating-system window close button closes the game.
@@ -73,6 +77,7 @@ The script uses `g++ -m32`; the compiler itself must have 32-bit MinGW-w64 suppo
 - `src/battle_format.hpp` — per-save randomized Single/Double preference and party-size constraints
 - `src/player_profile.hpp` — trainer name, gender, and the three-currency wallet model
 - `src/inventory.hpp` — item quantities and Arceus Ball timer state
+- `src/healing_system.hpp` — Pokémon Center healing and all-fainted emergency return rules
 - `src/save_game.hpp` — persistent save serialization for profile, currencies, battle rules, party, inventory, position, and timer state
 - `src/private_cheat_menu.hpp` — private-build native desktop Cheats menu and separate code-entry window
 - `tests/pokemon_party_test.cpp` — party storage, HP, healing, and switching tests

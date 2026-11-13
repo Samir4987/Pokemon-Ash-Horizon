@@ -27,6 +27,8 @@ struct SaveGameData {
     bool privateSamfr2xActive = false;
     float playerX = 80.0f;
     float playerY = 128.0f;
+    float lastCenterX = 64.0f;
+    float lastCenterY = 96.0f;
 };
 
 class SaveGameStore {
@@ -35,13 +37,14 @@ public:
                      const PokemonParty& party) {
         std::ofstream out(path, std::ios::trunc);
         if (!out) return false;
-        out << "ASH_HORIZON_SAVE 4\n";
+        out << "ASH_HORIZON_SAVE 5\n";
         out << std::quoted(data.battleRules.serialize()) << '\n';
         out << std::quoted(data.profile.name()) << ' '
             << static_cast<unsigned>(data.profile.gender()) << '\n';
         out << data.wallet.pokeDollars() << ' ' << data.wallet.hc() << ' '
             << data.wallet.shards() << '\n';
         out << std::setprecision(9) << data.playerX << ' ' << data.playerY << '\n';
+        out << data.lastCenterX << ' ' << data.lastCenterY << '\n';
         out << (data.arceusBall.unlimitedTime ? 1 : 0) << ' '
             << data.arceusBall.remainingMilliseconds << ' '
             << (data.arceusBall.inUse ? 1 : 0) << ' '
@@ -71,14 +74,17 @@ public:
         std::string header, serializedRules;
         if (!std::getline(in, header) ||
             (header != "ASH_HORIZON_SAVE 1" && header != "ASH_HORIZON_SAVE 2" &&
-             header != "ASH_HORIZON_SAVE 3" && header != "ASH_HORIZON_SAVE 4"))
+             header != "ASH_HORIZON_SAVE 3" && header != "ASH_HORIZON_SAVE 4" &&
+             header != "ASH_HORIZON_SAVE 5"))
             return false;
         const bool hasExperience = header == "ASH_HORIZON_SAVE 2" ||
                                    header == "ASH_HORIZON_SAVE 3" ||
                                    header == "ASH_HORIZON_SAVE 4";
         const bool hasMoves = header == "ASH_HORIZON_SAVE 3" ||
                               header == "ASH_HORIZON_SAVE 4";
-        const bool hasProfileAndWallet = header == "ASH_HORIZON_SAVE 4";
+        const bool hasProfileAndWallet = header == "ASH_HORIZON_SAVE 4" ||
+                                         header == "ASH_HORIZON_SAVE 5";
+        const bool hasCenterLocation = header == "ASH_HORIZON_SAVE 5";
         if (!(in >> std::quoted(serializedRules))) return false;
 
         SaveGameData loaded;
@@ -93,8 +99,11 @@ public:
         }
 
         int unlimited = 0, inUse = 0, privateCheat = 0;
-        if (!(in >> loaded.playerX >> loaded.playerY >> unlimited
-                 >> loaded.arceusBall.remainingMilliseconds >> inUse >> privateCheat)) return false;
+        if (!(in >> loaded.playerX >> loaded.playerY)) return false;
+        if (hasCenterLocation &&
+            !(in >> loaded.lastCenterX >> loaded.lastCenterY)) return false;
+        if (!(in >> unlimited >> loaded.arceusBall.remainingMilliseconds
+                 >> inUse >> privateCheat)) return false;
         if ((unlimited != 0 && unlimited != 1) || (inUse != 0 && inUse != 1) ||
             (privateCheat != 0 && privateCheat != 1)) return false;
         loaded.arceusBall.unlimitedTime = unlimited != 0;

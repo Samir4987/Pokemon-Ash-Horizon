@@ -79,6 +79,12 @@ jobs:
           g++ -std=c++17 -O2 -Wall -Wextra tests/gameplay_system_test.cpp -o gameplay_system_test.exe
           ./gameplay_system_test.exe
 
+      - name: Run healing and emergency return unit tests
+        run: |
+          set -euxo pipefail
+          g++ -std=c++17 -O2 -Wall -Wextra tests/healing_system_test.cpp -o healing_system_test.exe
+          ./healing_system_test.exe
+
       - name: Download SDL3 3.4.20 MinGW development package (x86)
         shell: pwsh
         run: |

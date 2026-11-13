@@ -66,6 +66,8 @@ int main() {
     data.privateSamfr2xActive = true;
     data.playerX = 333.5f;
     data.playerY = 121.25f;
+    data.lastCenterX = 64.0f;
+    data.lastCenterY = 96.0f;
 
     const char* path = "ash_horizon_save_test.tmp";
     assert(SaveGameStore::save(path, data, party));
@@ -88,6 +90,8 @@ int main() {
     assert(loaded.arceusBall.inUse);
     assert(loaded.arceusBall.remainingMilliseconds == 20000);
     assert(loaded.playerX == data.playerX && loaded.playerY == data.playerY);
+    assert(loaded.lastCenterX == data.lastCenterX &&
+           loaded.lastCenterY == data.lastCenterY);
     assert(loadedParty.size() == 2);
     assert(loadedParty.activeIndex() == 1);
     assert(loadedParty.active()->nickname == "Backup");
