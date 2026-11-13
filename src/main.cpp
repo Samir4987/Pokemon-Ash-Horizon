@@ -419,6 +419,7 @@ int main(int, char**) {
     int selectedStarter = 0;
     int selectedBag = 0;
     int selectedMenu = 0;
+    Mode partyReturnMode = Mode::Menu;
     int selectedBall = 0;
     std::uint16_t wildDex = 1;
     std::string wildName = "Wild Pokemon";
@@ -492,6 +493,7 @@ int main(int, char**) {
                     selectedMenu = 0;
                     lastAction = now;
                 } else if (mode == Mode::World && key == SDL_SCANCODE_V) {
+                    partyReturnMode = Mode::World;
                     mode = Mode::Party;
                     selectedPartyIndex = static_cast<int>(party.activeIndex());
                     lastAction = now;
@@ -505,6 +507,7 @@ int main(int, char**) {
                     } else if (key == SDL_SCANCODE_X) {
                         if (selectedMenu == 0) { mode = Mode::Bag; selectedBag = 0; }
                         else if (selectedMenu == 1) {
+                            partyReturnMode = Mode::Menu;
                             mode = Mode::Party;
                             selectedPartyIndex = static_cast<int>(party.activeIndex());
                         } else mode = Mode::World;
@@ -527,7 +530,7 @@ int main(int, char**) {
                     }
                 } else if (mode == Mode::Party && now - lastAction > 130) {
                     if (key == SDL_SCANCODE_Z) {
-                        mode = Mode::Menu; lastAction = now;
+                        mode = partyReturnMode; lastAction = now;
                     } else if (key == SDL_SCANCODE_W) {
                         selectedPartyIndex = std::max(0, selectedPartyIndex - 1); lastAction = now;
                     } else if (key == SDL_SCANCODE_S) {
