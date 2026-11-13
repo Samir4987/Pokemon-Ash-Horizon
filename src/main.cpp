@@ -585,7 +585,7 @@ int main(int, char**) {
                         } else battle.chooseMove();
                     }
                 }
-            }            }
+            }
         }
 
 #ifdef _WIN32
