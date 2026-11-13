@@ -79,9 +79,11 @@ public:
             return false;
         const bool hasExperience = header == "ASH_HORIZON_SAVE 2" ||
                                    header == "ASH_HORIZON_SAVE 3" ||
-                                   header == "ASH_HORIZON_SAVE 4";
+                                   header == "ASH_HORIZON_SAVE 4" ||
+                                   header == "ASH_HORIZON_SAVE 5";
         const bool hasMoves = header == "ASH_HORIZON_SAVE 3" ||
-                              header == "ASH_HORIZON_SAVE 4";
+                              header == "ASH_HORIZON_SAVE 4" ||
+                              header == "ASH_HORIZON_SAVE 5";
         const bool hasProfileAndWallet = header == "ASH_HORIZON_SAVE 4" ||
                                          header == "ASH_HORIZON_SAVE 5";
         const bool hasCenterLocation = header == "ASH_HORIZON_SAVE 5";
