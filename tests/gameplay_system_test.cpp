@@ -21,10 +21,20 @@ int main() {
     SpeciesRecord squirtle=bulba; squirtle.nationalDex=7; squirtle.name="Squirtle";
     squirtle.type1=PokemonType::Water; assert(db.addSpecies(squirtle));
 
+    SpeciesRecord charizard=bulba; charizard.nationalDex=6; charizard.name="Charizard";
+    charizard.type1=PokemonType::Fire; assert(db.addSpecies(charizard));
+
     PokemonParty party;
     assert(StarterSelection::choose(1,db,party));
     assert(party.size()==1 && party.active()->nationalDex==4);
     assert(party.active()->moveCount == 4);
+    assert(addFriendshipTestTeam(db,party));
+    assert(party.size()==3);
+    assert(party.member(0)->nationalDex==4 && party.member(0)->friendship==98);
+    assert(party.member(1)->nationalDex==1 && party.member(1)->friendship==46);
+    assert(party.member(2)->nationalDex==7 && party.member(2)->friendship==22);
+    assert(party.member(1)->moveCount==4 && party.member(2)->moveCount==4);
+    assert(!addFriendshipTestTeam(db,party));
     assert(party.active()->moveIds[0] == static_cast<std::uint16_t>(MoveId::Scratch));
     assert(party.active()->movePp[0] == 35);
     party.active()->movePp[0] = 14;

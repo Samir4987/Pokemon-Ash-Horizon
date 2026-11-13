@@ -36,6 +36,59 @@ public:
     }
 };
 
+struct FriendshipTestPokemon {
+    std::uint16_t dex;
+    std::uint8_t friendship;
+};
+
+inline constexpr FriendshipTestPokemon FRIENDSHIP_TEST_TEAM[3] = {
+    {1, 46},  // Bulbasaur: 10% refusal chance.
+    {6, 98},  // Charizard: 0% refusal chance.
+    {7, 22}   // Squirtle: 60% refusal chance.
+};
+
+// Adds the three test species without deleting or replacing existing party
+// members. If there is not enough room for the complete test trio, nothing is
+// added. Existing members of the trio receive their exact test friendship.
+inline bool addFriendshipTestTeam(const PokemonDatabase& database,
+                                  PokemonParty& party) {
+    std::size_t missing = 0;
+    for (const auto& testPokemon : FRIENDSHIP_TEST_TEAM) {
+        if (!database.findSpecies(testPokemon.dex)) return false;
+        bool found = false;
+        for (const auto& member : party.members()) {
+            if (member.nationalDex == testPokemon.dex) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) ++missing;
+    }
+    if (party.size() + missing > PokemonParty::MAX_SIZE) return false;
+
+    bool changed = false;
+    for (const auto& testPokemon : FRIENDSHIP_TEST_TEAM) {
+        PartyPokemon* member = nullptr;
+        for (std::size_t i = 0; i < party.size(); ++i) {
+            if (party.member(i)->nationalDex == testPokemon.dex) {
+                member = party.member(i);
+                break;
+            }
+        }
+        if (!member) {
+            if (!party.add(database, testPokemon.dex, 5)) return false;
+            member = party.member(party.size() - 1);
+            initializeMoveSet(*member);
+            changed = true;
+        }
+        if (member->friendship != testPokemon.friendship) {
+            member->friendship = testPokemon.friendship;
+            changed = true;
+        }
+    }
+    return changed;
+}
+
 enum class CaptureResult : std::uint8_t {
     Caught, Failed, NoBall, PartyFull, InvalidTarget, TimerExpired
 };

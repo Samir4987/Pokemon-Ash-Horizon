@@ -15,6 +15,7 @@ A small, original, GBA-inspired 2D Pokémon-style adventure prototype written in
 - Turn-based wild battles with species-based HP and stats, type effectiveness, STAB, critical hits, friendship-based attack refusal, capture attempts, and experience rewards
 - Authored four-slot starter move sets for Bulbasaur, Charmander, and Squirtle, with a small move catalogue and individual PP values stored per Pokémon
 - Six-slot Pokémon party with starter and wild Pokémon, individual HP, experience/level progression, active-member switching, and battle HP linked to the active Pokémon
+- Friendship test squad added without replacing existing party members when space allows: Bulbasaur (46%), Charizard (98%), and Squirtle (22%); party screen displays friendship percentages for refusal testing
 - One persistent save slot stores the trainer profile, gender selection, PokeDollars, HC, Shards, party, HP, friendship, experience, move slots and PP, player position, inventory, Arceus Ball timer state, and a randomized Single/Double preference; save versions 1–3 remain compatible
 - Private Windows development build has a native top-bar **Cheats** menu with a separate code-entry window; `samfr2x` grants 999 of every currently defined item and makes the Arceus Ball timer unlimited in the saved game (the full capture mechanic is not implemented yet)
 - Bag menu supports Potion, Super Potion, and Revive use; capture and item rules have standalone unit tests

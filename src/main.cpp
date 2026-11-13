@@ -249,9 +249,11 @@ void drawParty(SDL_Renderer* r, const ash_horizon::PokemonParty& party,
             ? pokemon->speciesName : pokemon->nickname;
         SDL_RenderDebugText(r, active ? 39 : 29, y + 5, label.c_str());
         const std::string stats = "Lv" + std::to_string(pokemon->level) +
-            "  HP " + std::to_string(pokemon->currentHp) + "/" +
+            " HP" + std::to_string(pokemon->currentHp) + "/" +
             std::to_string(pokemon->maxHp);
-        SDL_RenderDebugText(r, 145, y + 5, stats.c_str());
+        SDL_RenderDebugText(r, 105, y + 5, stats.c_str());
+        const std::string friendship = "F" + std::to_string(pokemon->friendship) + "%";
+        SDL_RenderDebugText(r, 190, y + 5, friendship.c_str());
     }
     fill(r, 12, 146, 216, 8, 35, 65, 82);
     SDL_RenderDebugText(r, 17, 146, "X: SWITCH    Z: BACK");
@@ -373,6 +375,7 @@ int main(int, char**) {
     };
     addDemoSpecies(1, "Bulbasaur", ash_horizon::PokemonType::Grass, 45, 49, 49, 65, 65, 45);
     addDemoSpecies(4, "Charmander", ash_horizon::PokemonType::Fire, 39, 52, 43, 60, 50, 65);
+    addDemoSpecies(6, "Charizard", ash_horizon::PokemonType::Fire, 78, 84, 78, 109, 85, 100);
     addDemoSpecies(7, "Squirtle", ash_horizon::PokemonType::Water, 44, 48, 65, 50, 64, 43);
 
     ash_horizon::PokemonParty party;
@@ -397,8 +400,17 @@ int main(int, char**) {
         saveData.playerX = player.x;
         saveData.playerY = player.y;
     }
-    // Persist the new save immediately so its random battle preference survives crashes.
-    if (!loadedExistingSave) {
+    // Add the friendship test trio to existing parties only when all three fit.
+    // This preserves all existing members and saves the test values persistently.
+    bool friendshipTestTeamChanged = false;
+    if (saveData.profile.gender() != ash_horizon::PlayerGender::Unselected &&
+        !party.empty()) {
+        friendshipTestTeamChanged =
+            ash_horizon::addFriendshipTestTeam(pokemonDatabase, party);
+    }
+
+    // Persist new save state and any one-time test-team addition.
+    if (!loadedExistingSave || friendshipTestTeamChanged) {
         ash_horizon::SaveGameStore::save(savePath, saveData, party);
     }
 #ifdef _WIN32
@@ -480,6 +492,8 @@ int main(int, char**) {
                     else if (key == SDL_SCANCODE_S) { selectedStarter = (selectedStarter + 1) % 3; lastAction = now; }
                     else if (key == SDL_SCANCODE_X) {
                         if (ash_horizon::StarterSelection::choose(static_cast<std::size_t>(selectedStarter), pokemonDatabase, party)) {
+                            // Temporary test squad: Bulbasaur 46, Charizard 98, Squirtle 22.
+                            ash_horizon::addFriendshipTestTeam(pokemonDatabase, party);
                             saveData.inventory.add(ash_horizon::ItemId::PokeBall, 5);
                             saveData.inventory.add(ash_horizon::ItemId::Potion, 3);
                             saveData.playerX = player.x; saveData.playerY = player.y;
