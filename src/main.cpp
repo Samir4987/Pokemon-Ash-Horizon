@@ -32,7 +32,7 @@ constexpr int MAP_W = 30;
 constexpr int MAP_H = 20;
 constexpr float PLAYER_SPEED = 75.0f;
 
-enum class Mode { World, Battle, Party, Bag, Profile, Starter };
+enum class Mode { World, Battle, Party, Bag, Menu, Profile, Starter };
 
 struct Player {
     float x = 5.0f * TILE;
@@ -161,7 +161,7 @@ void drawProfileSetup(SDL_Renderer* r, const std::string& name, int gender,
         char label[2] = {PROFILE_CHARACTERS[i] == ' ' ? '_' : PROFILE_CHARACTERS[i], '\0'};
         SDL_RenderDebugText(r, x + 2, y, label);
     }
-    SDL_RenderDebugText(r, 18, 139, "WASD MOVE E ADD B DEL T SEX I OK");
+    SDL_RenderDebugText(r, 18, 139, "WASD MOVE X ADD Z DEL V SEX M OK");
 }
 
 void drawWallet(SDL_Renderer* r, const ash_horizon::PlayerProfile& profile,
@@ -188,14 +188,29 @@ void drawStarter(SDL_Renderer* r, int selected) {
         SDL_RenderDebugText(r, 32, y, i == selected ? ">" : " ");
         SDL_RenderDebugText(r, 48, y, names[i]);
     }
-    SDL_RenderDebugText(r, 18, 132, "W/S SELECT    E CONFIRM");
+    SDL_RenderDebugText(r, 18, 132, "W/S SELECT    X CONFIRM");
+}
+
+void drawMainMenu(SDL_Renderer* r, int selected) {
+    fill(r, 0, 0, SCREEN_W, SCREEN_H, 35, 55, 75);
+    fill(r, 28, 20, 184, 120, 238, 240, 220);
+    fill(r, 28, 20, 184, 20, 35, 65, 82);
+    SDL_RenderDebugText(r, 40, 27, "ASH HORIZON MENU");
+    const char* entries[3] = {"BAG", "POKEMON PARTY", "RESUME"};
+    for (int i = 0; i < 3; ++i) {
+        const int y = 58 + i * 23;
+        if (i == selected) fill(r, 40, y - 4, 160, 19, 185, 220, 185);
+        SDL_RenderDebugText(r, 48, y, i == selected ? ">" : " ");
+        SDL_RenderDebugText(r, 64, y, entries[i]);
+    }
+    SDL_RenderDebugText(r, 40, 122, "W/S SELECT  X OK  Z BACK");
 }
 
 void drawBag(SDL_Renderer* r, const ash_horizon::Inventory& bag, int selected) {
     fill(r, 0, 0, SCREEN_W, SCREEN_H, 42, 65, 83);
     fill(r, 5, 5, 230, 150, 238, 240, 220);
     fill(r, 5, 5, 230, 18, 35, 65, 82);
-    SDL_RenderDebugText(r, 14, 11, "BAG - W/S SELECT, E USE, T BACK");
+    SDL_RenderDebugText(r, 14, 11, "BAG - W/S SELECT, X USE, Z BACK");
     const ash_horizon::ItemId items[3] = {ash_horizon::ItemId::Potion,
         ash_horizon::ItemId::SuperPotion, ash_horizon::ItemId::Revive};
     const char* names[3] = {"Potion", "Super Potion", "Revive"};
@@ -239,7 +254,7 @@ void drawParty(SDL_Renderer* r, const ash_horizon::PokemonParty& party,
         SDL_RenderDebugText(r, 145, y + 5, stats.c_str());
     }
     fill(r, 12, 146, 216, 8, 35, 65, 82);
-    SDL_RenderDebugText(r, 17, 146, "E: SWITCH    T: BACK");
+    SDL_RenderDebugText(r, 17, 146, "X: SWITCH    Z: BACK");
 }
 
 void drawBattle(SDL_Renderer* r, const ash_horizon::BattleEngine& battle,
@@ -403,6 +418,7 @@ int main(int, char**) {
     int selectedPartyIndex = 0;
     int selectedStarter = 0;
     int selectedBag = 0;
+    int selectedMenu = 0;
     int selectedBall = 0;
     std::uint16_t wildDex = 1;
     std::string wildName = "Wild Pokemon";
@@ -428,7 +444,6 @@ int main(int, char**) {
                 if (mode == Mode::Profile && now - lastAction > 130) {
                     constexpr std::size_t characterCount = sizeof(PROFILE_CHARACTERS) - 1;
                     constexpr std::size_t columns = 8;
-                    const std::size_t rows = (characterCount + columns - 1) / columns;
                     if (key == SDL_SCANCODE_A && selectedProfileCharacter % columns > 0) {
                         --selectedProfileCharacter; lastAction = now;
                     } else if (key == SDL_SCANCODE_D && selectedProfileCharacter % columns + 1 < columns &&
@@ -438,18 +453,17 @@ int main(int, char**) {
                         selectedProfileCharacter -= columns; lastAction = now;
                     } else if (key == SDL_SCANCODE_S && selectedProfileCharacter + columns < characterCount) {
                         selectedProfileCharacter += columns; lastAction = now;
-                    } else if (key == SDL_SCANCODE_E) {
+                    } else if (key == SDL_SCANCODE_X) {
                         if (profileName.size() < ash_horizon::PlayerProfile::MAX_NAME_LENGTH) {
                             const char selected = PROFILE_CHARACTERS[selectedProfileCharacter];
-                            if (selected != ' ' || !profileName.empty())
-                                profileName.push_back(selected);
+                            if (selected != ' ' || !profileName.empty()) profileName.push_back(selected);
                         }
                         lastAction = now;
-                    } else if (key == SDL_SCANCODE_B && !profileName.empty()) {
+                    } else if (key == SDL_SCANCODE_Z && !profileName.empty()) {
                         profileName.pop_back(); lastAction = now;
-                    } else if (key == SDL_SCANCODE_T) {
+                    } else if (key == SDL_SCANCODE_V) {
                         selectedGender = 1 - selectedGender; lastAction = now;
-                    } else if (key == SDL_SCANCODE_I) {
+                    } else if (key == SDL_SCANCODE_M) {
                         const auto gender = selectedGender == 0
                             ? ash_horizon::PlayerGender::Male
                             : ash_horizon::PlayerGender::Female;
@@ -463,7 +477,7 @@ int main(int, char**) {
                 } else if (mode == Mode::Starter && now - lastAction > 130) {
                     if (key == SDL_SCANCODE_W) { selectedStarter = (selectedStarter + 2) % 3; lastAction = now; }
                     else if (key == SDL_SCANCODE_S) { selectedStarter = (selectedStarter + 1) % 3; lastAction = now; }
-                    else if (key == SDL_SCANCODE_E) {
+                    else if (key == SDL_SCANCODE_X) {
                         if (ash_horizon::StarterSelection::choose(static_cast<std::size_t>(selectedStarter), pokemonDatabase, party)) {
                             saveData.inventory.add(ash_horizon::ItemId::PokeBall, 5);
                             saveData.inventory.add(ash_horizon::ItemId::Potion, 3);
@@ -473,17 +487,34 @@ int main(int, char**) {
                         }
                         lastAction = now;
                     }
-                } else if (mode == Mode::World && key == SDL_SCANCODE_I) {
-                    mode = Mode::Bag;
-                    selectedBag = 0;
-                } else if (mode == Mode::World && key == SDL_SCANCODE_T) {
+                } else if (mode == Mode::World && key == SDL_SCANCODE_M) {
+                    mode = Mode::Menu;
+                    selectedMenu = 0;
+                    lastAction = now;
+                } else if (mode == Mode::World && key == SDL_SCANCODE_V) {
                     mode = Mode::Party;
                     selectedPartyIndex = static_cast<int>(party.activeIndex());
+                    lastAction = now;
+                } else if (mode == Mode::Menu && now - lastAction > 130) {
+                    if (key == SDL_SCANCODE_Z) {
+                        mode = Mode::World; lastAction = now;
+                    } else if (key == SDL_SCANCODE_W) {
+                        selectedMenu = (selectedMenu + 2) % 3; lastAction = now;
+                    } else if (key == SDL_SCANCODE_S) {
+                        selectedMenu = (selectedMenu + 1) % 3; lastAction = now;
+                    } else if (key == SDL_SCANCODE_X) {
+                        if (selectedMenu == 0) { mode = Mode::Bag; selectedBag = 0; }
+                        else if (selectedMenu == 1) {
+                            mode = Mode::Party;
+                            selectedPartyIndex = static_cast<int>(party.activeIndex());
+                        } else mode = Mode::World;
+                        lastAction = now;
+                    }
                 } else if (mode == Mode::Bag && now - lastAction > 130) {
-                    if (key == SDL_SCANCODE_T) { mode = Mode::World; lastAction = now; }
+                    if (key == SDL_SCANCODE_Z) { mode = Mode::Menu; lastAction = now; }
                     else if (key == SDL_SCANCODE_W) { selectedBag = (selectedBag + 2) % 3; lastAction = now; }
                     else if (key == SDL_SCANCODE_S) { selectedBag = (selectedBag + 1) % 3; lastAction = now; }
-                    else if (key == SDL_SCANCODE_E) {
+                    else if (key == SDL_SCANCODE_X) {
                         const ash_horizon::ItemId items[3] = {ash_horizon::ItemId::Potion,
                             ash_horizon::ItemId::SuperPotion, ash_horizon::ItemId::Revive};
                         if (party.active()) {
@@ -495,18 +526,15 @@ int main(int, char**) {
                         lastAction = now;
                     }
                 } else if (mode == Mode::Party && now - lastAction > 130) {
-                    if (key == SDL_SCANCODE_T) {
-                        mode = Mode::World;
-                        lastAction = now;
+                    if (key == SDL_SCANCODE_Z) {
+                        mode = Mode::Menu; lastAction = now;
                     } else if (key == SDL_SCANCODE_W) {
-                        selectedPartyIndex = std::max(0, selectedPartyIndex - 1);
-                        lastAction = now;
+                        selectedPartyIndex = std::max(0, selectedPartyIndex - 1); lastAction = now;
                     } else if (key == SDL_SCANCODE_S) {
                         selectedPartyIndex = std::min(
                             static_cast<int>(ash_horizon::PokemonParty::MAX_SIZE) - 1,
-                            selectedPartyIndex + 1);
-                        lastAction = now;
-                    } else if (key == SDL_SCANCODE_E) {
+                            selectedPartyIndex + 1); lastAction = now;
+                    } else if (key == SDL_SCANCODE_X) {
                         party.switchTo(static_cast<std::size_t>(selectedPartyIndex));
                         lastAction = now;
                     }
@@ -515,22 +543,15 @@ int main(int, char**) {
                     else if (key == SDL_SCANCODE_S) { battle.moveSelection(2); lastAction = now; }
                     else if (key == SDL_SCANCODE_A) { battle.moveSelection(-1); lastAction = now; }
                     else if (key == SDL_SCANCODE_D) { battle.moveSelection(1); lastAction = now; }
-                    else if (key == SDL_SCANCODE_T && battle.phase() == ash_horizon::BattlePhase::PlayerChoice) {
+                    else if (key == SDL_SCANCODE_V && battle.phase() == ash_horizon::BattlePhase::PlayerChoice) {
                         for (std::size_t offset = 1; offset <= party.size(); ++offset) {
                             const std::size_t candidate = (party.activeIndex() + offset) % party.size();
                             if (party.switchTo(candidate)) { battle.switchTurn(); break; }
                         }
                         lastAction = now;
-                    }
-                    else if (key == SDL_SCANCODE_Z && battle.phase() == ash_horizon::BattlePhase::PlayerChoice) {
-                        selectedBall = (selectedBall + 1) % 5;
-                        lastAction = now;
-                    }
-                    else if (key == SDL_SCANCODE_G && battle.phase() == ash_horizon::BattlePhase::PlayerChoice) {
-                        battle.runAway();
-                        lastAction = now;
-                    }
-                    else if (key == SDL_SCANCODE_F && battle.phase() == ash_horizon::BattlePhase::PlayerChoice) {
+                    } else if (key == SDL_SCANCODE_C && battle.phase() == ash_horizon::BattlePhase::PlayerChoice) {
+                        selectedBall = (selectedBall + 1) % 5; lastAction = now;
+                    } else if (key == SDL_SCANCODE_F && battle.phase() == ash_horizon::BattlePhase::PlayerChoice) {
                         lastAction = now;
                         const ash_horizon::ItemId captureBalls[5] = {
                             ash_horizon::ItemId::PokeBall, ash_horizon::ItemId::GreatBall,
@@ -541,7 +562,7 @@ int main(int, char**) {
                             party, pokemonDatabase, wildDex, battle.enemyHp(),
                             battle.enemyMaxHp(), encounterRoll(rng));
                         if (result == ash_horizon::CaptureResult::Caught)
-                            battle.captureSucceeded("Pokemon caught! Press E.");
+                            battle.captureSucceeded("Pokemon caught! Press X.");
                         else if (result == ash_horizon::CaptureResult::Failed)
                             battle.captureFailed();
                         else if (result == ash_horizon::CaptureResult::NoBall)
@@ -550,8 +571,9 @@ int main(int, char**) {
                             battle.captureUnavailable("Party is full!");
                         else if (result == ash_horizon::CaptureResult::TimerExpired)
                             battle.captureUnavailable("Arceus Ball timer expired.");
-                    }
-                    else if (key == SDL_SCANCODE_E) {
+                    } else if (key == SDL_SCANCODE_Z && battle.phase() == ash_horizon::BattlePhase::PlayerChoice) {
+                        battle.runAway(); lastAction = now;
+                    } else if (key == SDL_SCANCODE_X) {
                         lastAction = now;
                         if (battle.phase() == ash_horizon::BattlePhase::Finished) {
                             if (battle.enemyHp() == 0 && party.active())
@@ -562,7 +584,8 @@ int main(int, char**) {
                             ash_horizon::SaveGameStore::save(savePath, saveData, party);
                         } else battle.chooseMove();
                     }
-                }            }
+                }
+            }            }
         }
 
 #ifdef _WIN32
@@ -640,6 +663,8 @@ int main(int, char**) {
             drawParty(renderer, party, selectedPartyIndex);
         } else if (mode == Mode::Bag) {
             drawBag(renderer, saveData.inventory, selectedBag);
+        } else if (mode == Mode::Menu) {
+            drawMainMenu(renderer, selectedMenu);
         }
 
         SDL_RenderPresent(renderer);
