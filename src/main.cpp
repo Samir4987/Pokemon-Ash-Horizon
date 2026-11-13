@@ -32,7 +32,7 @@ constexpr int MAP_W = 30;
 constexpr int MAP_H = 20;
 constexpr float PLAYER_SPEED = 75.0f;
 
-enum class Mode { World, Battle, Party, Bag, Starter };
+enum class Mode { World, Battle, Party, Bag, Profile, Starter };
 
 struct Player {
     float x = 5.0f * TILE;
@@ -135,6 +135,32 @@ void drawWildCreature(SDL_Renderer* r, const ash_horizon::WildCreature& c,
         fill(r, x + 1, y + bob, 2, 2, 245, 225, 110);
         fill(r, x + 14, y + 2 + bob, 2, 2, 245, 225, 110);
     }
+}
+
+void drawProfileSetup(SDL_Renderer* r, const std::string& name, int gender) {
+    fill(r, 0, 0, SCREEN_W, SCREEN_H, 28, 52, 72);
+    fill(r, 8, 8, 224, 144, 238, 240, 220);
+    fill(r, 8, 8, 224, 22, 35, 65, 82);
+    SDL_RenderDebugText(r, 18, 15, "NEW TRAINER PROFILE");
+    SDL_RenderDebugText(r, 18, 43, "NAME (12 CHARACTERS MAX):");
+    fill(r, 18, 58, 204, 18, 255, 255, 245);
+    SDL_RenderDebugText(r, 24, 63, name.empty() ? "_" : name.c_str());
+    SDL_RenderDebugText(r, 18, 88, "CHOOSE YOUR TRAINER:");
+    fill(r, 18, 103, 96, 20, gender == 0 ? 185 : 218, gender == 0 ? 220 : 222, gender == 0 ? 185 : 210);
+    fill(r, 122, 103, 100, 20, gender == 1 ? 185 : 218, gender == 1 ? 220 : 222, gender == 1 ? 185 : 210);
+    SDL_RenderDebugText(r, 43, 109, "MALE");
+    SDL_RenderDebugText(r, 147, 109, "FEMALE");
+    SDL_RenderDebugText(r, 18, 133, "TYPE NAME  TAB: GENDER  ENTER: OK");
+}
+
+void drawWallet(SDL_Renderer* r, const ash_horizon::PlayerWallet& wallet) {
+    fill(r, 3, 3, 91, 31, 25, 45, 60);
+    const std::string money = "P$ " + std::to_string(wallet.pokeDollars());
+    const std::string hc = "HC " + std::to_string(wallet.hc());
+    const std::string shards = "SH " + std::to_string(wallet.shards());
+    SDL_RenderDebugText(r, 7, 6, money.c_str());
+    SDL_RenderDebugText(r, 7, 15, hc.c_str());
+    SDL_RenderDebugText(r, 7, 24, shards.c_str());
 }
 
 void drawStarter(SDL_Renderer* r, int selected) {
@@ -352,7 +378,12 @@ int main(int, char**) {
     privateCheatMenu.setSamfr2xActivated(saveData.privateSamfr2xActive);
 #endif
 
-    Mode mode = party.empty() ? Mode::Starter : Mode::World;
+    Mode mode = saveData.profile.gender() == ash_horizon::PlayerGender::Unselected
+        ? Mode::Profile : (party.empty() ? Mode::Starter : Mode::World);
+    std::string profileName = saveData.profile.gender() == ash_horizon::PlayerGender::Unselected
+        ? std::string() : saveData.profile.name();
+    int selectedGender = 0;
+    if (mode == Mode::Profile) SDL_StartTextInput(window);
     ash_horizon::BattleEngine battle;
     battle.setParty(&party);
     battle.setDatabase(&pokemonDatabase);
@@ -378,10 +409,40 @@ int main(int, char**) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT) running = false;
+            if (event.type == SDL_EVENT_TEXT_INPUT && mode == Mode::Profile) {
+                for (const char* ch = event.text.text; *ch; ++ch) {
+                    const unsigned char value = static_cast<unsigned char>(*ch);
+                    const bool allowed = (value >= 'A' && value <= 'Z') ||
+                        (value >= 'a' && value <= 'z') ||
+                        (value >= '0' && value <= '9') || value == ' ' ||
+                        value == '-' || value == '_';
+                    if (allowed && profileName.size() < ash_horizon::PlayerProfile::MAX_NAME_LENGTH)
+                        profileName.push_back(static_cast<char>(value));
+                }
+            }
             if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat) {
                 const SDL_Scancode key = event.key.scancode;
 
-                if (mode == Mode::Starter && now - lastAction > 130) {
+                if (mode == Mode::Profile && now - lastAction > 130) {
+                    if (key == SDL_SCANCODE_BACKSPACE && !profileName.empty()) {
+                        profileName.pop_back();
+                        lastAction = now;
+                    } else if (key == SDL_SCANCODE_TAB) {
+                        selectedGender = 1 - selectedGender;
+                        lastAction = now;
+                    } else if (key == SDL_SCANCODE_RETURN || key == SDL_SCANCODE_KP_ENTER) {
+                        const auto gender = selectedGender == 0
+                            ? ash_horizon::PlayerGender::Male
+                            : ash_horizon::PlayerGender::Female;
+                        if (saveData.profile.setName(profileName) &&
+                            saveData.profile.setGender(gender) &&
+                            ash_horizon::SaveGameStore::save(savePath, saveData, party)) {
+                            SDL_StopTextInput(window);
+                            mode = party.empty() ? Mode::Starter : Mode::World;
+                        }
+                        lastAction = now;
+                    }
+                } else if (mode == Mode::Starter && now - lastAction > 130) {
                     if (key == SDL_SCANCODE_W) { selectedStarter = (selectedStarter + 2) % 3; lastAction = now; }
                     else if (key == SDL_SCANCODE_S) { selectedStarter = (selectedStarter + 1) % 3; lastAction = now; }
                     else if (key == SDL_SCANCODE_E) {
@@ -538,7 +599,9 @@ int main(int, char**) {
             saveData.arceusBall.update(static_cast<std::uint32_t>(dt * 1000.0f));
         }
 
-        if (mode == Mode::Starter) {
+        if (mode == Mode::Profile) {
+            drawProfileSetup(renderer, profileName, selectedGender);
+        } else if (mode == Mode::Starter) {
             drawStarter(renderer, selectedStarter);
         } else if (mode == Mode::World) {
             livingWorld.update(dt, player.x, player.y, blocked);
@@ -551,6 +614,7 @@ int main(int, char**) {
                 drawWildCreature(renderer, creature, cameraX, cameraY);
             }
             drawPlayer(renderer, player.x - cameraX, player.y - cameraY);
+            drawWallet(renderer, saveData.wallet);
         } else if (mode == Mode::Battle) {
             drawBattle(renderer, battle, spriteBank, wildDex, wildName.c_str());
             battle.drawEffects(renderer);
