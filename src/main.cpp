@@ -137,20 +137,31 @@ void drawWildCreature(SDL_Renderer* r, const ash_horizon::WildCreature& c,
     }
 }
 
-void drawProfileSetup(SDL_Renderer* r, const std::string& name, int gender) {
+constexpr char PROFILE_CHARACTERS[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_ ";
+
+void drawProfileSetup(SDL_Renderer* r, const std::string& name, int gender,
+                      std::size_t selectedCharacter) {
     fill(r, 0, 0, SCREEN_W, SCREEN_H, 28, 52, 72);
     fill(r, 8, 8, 224, 144, 238, 240, 220);
     fill(r, 8, 8, 224, 22, 35, 65, 82);
     SDL_RenderDebugText(r, 18, 15, "NEW TRAINER PROFILE");
-    SDL_RenderDebugText(r, 18, 43, "NAME (12 CHARACTERS MAX):");
-    fill(r, 18, 58, 204, 18, 255, 255, 245);
-    SDL_RenderDebugText(r, 24, 63, name.empty() ? "_" : name.c_str());
-    SDL_RenderDebugText(r, 18, 88, "CHOOSE YOUR TRAINER:");
-    fill(r, 18, 103, 96, 20, gender == 0 ? 185 : 218, gender == 0 ? 220 : 222, gender == 0 ? 185 : 210);
-    fill(r, 122, 103, 100, 20, gender == 1 ? 185 : 218, gender == 1 ? 220 : 222, gender == 1 ? 185 : 210);
-    SDL_RenderDebugText(r, 43, 109, "MALE");
-    SDL_RenderDebugText(r, 147, 109, "FEMALE");
-    SDL_RenderDebugText(r, 18, 133, "TYPE NAME  TAB: GENDER  ENTER: OK");
+    SDL_RenderDebugText(r, 18, 35, "NAME (12 MAX):");
+    fill(r, 18, 47, 204, 15, 255, 255, 245);
+    SDL_RenderDebugText(r, 24, 51, name.empty() ? "_" : name.c_str());
+    const char* genderLabel = gender == 0 ? "GENDER: MALE" : "GENDER: FEMALE";
+    SDL_RenderDebugText(r, 18, 66, genderLabel);
+
+    constexpr int columns = 8;
+    constexpr int cellW = 25;
+    constexpr int cellH = 11;
+    for (std::size_t i = 0; i < sizeof(PROFILE_CHARACTERS) - 1; ++i) {
+        const int x = 18 + static_cast<int>(i % columns) * cellW;
+        const int y = 81 + static_cast<int>(i / columns) * cellH;
+        if (i == selectedCharacter) fill(r, x - 3, y - 1, 20, 10, 175, 215, 175);
+        char label[2] = {PROFILE_CHARACTERS[i] == ' ' ? '_' : PROFILE_CHARACTERS[i], '\0'};
+        SDL_RenderDebugText(r, x + 2, y, label);
+    }
+    SDL_RenderDebugText(r, 18, 139, "WASD MOVE E ADD B DEL T SEX I OK");
 }
 
 void drawWallet(SDL_Renderer* r, const ash_horizon::PlayerProfile& profile,
@@ -385,7 +396,7 @@ int main(int, char**) {
     std::string profileName = saveData.profile.gender() == ash_horizon::PlayerGender::Unselected
         ? std::string() : saveData.profile.name();
     int selectedGender = 0;
-    if (mode == Mode::Profile) SDL_StartTextInput(window);
+    std::size_t selectedProfileCharacter = 0;
     ash_horizon::BattleEngine battle;
     battle.setParty(&party);
     battle.setDatabase(&pokemonDatabase);
@@ -411,35 +422,40 @@ int main(int, char**) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT) running = false;
-            if (event.type == SDL_EVENT_TEXT_INPUT && mode == Mode::Profile) {
-                for (const char* ch = event.text.text; *ch; ++ch) {
-                    const unsigned char value = static_cast<unsigned char>(*ch);
-                    const bool allowed = (value >= 'A' && value <= 'Z') ||
-                        (value >= 'a' && value <= 'z') ||
-                        (value >= '0' && value <= '9') || value == ' ' ||
-                        value == '-' || value == '_';
-                    if (allowed && profileName.size() < ash_horizon::PlayerProfile::MAX_NAME_LENGTH)
-                        profileName.push_back(static_cast<char>(value));
-                }
-            }
             if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat) {
                 const SDL_Scancode key = event.key.scancode;
 
                 if (mode == Mode::Profile && now - lastAction > 130) {
-                    if (key == SDL_SCANCODE_BACKSPACE && !profileName.empty()) {
-                        profileName.pop_back();
+                    constexpr std::size_t characterCount = sizeof(PROFILE_CHARACTERS) - 1;
+                    constexpr std::size_t columns = 8;
+                    const std::size_t rows = (characterCount + columns - 1) / columns;
+                    if (key == SDL_SCANCODE_A && selectedProfileCharacter % columns > 0) {
+                        --selectedProfileCharacter; lastAction = now;
+                    } else if (key == SDL_SCANCODE_D && selectedProfileCharacter % columns + 1 < columns &&
+                               selectedProfileCharacter + 1 < characterCount) {
+                        ++selectedProfileCharacter; lastAction = now;
+                    } else if (key == SDL_SCANCODE_W && selectedProfileCharacter >= columns) {
+                        selectedProfileCharacter -= columns; lastAction = now;
+                    } else if (key == SDL_SCANCODE_S && selectedProfileCharacter + columns < characterCount) {
+                        selectedProfileCharacter += columns; lastAction = now;
+                    } else if (key == SDL_SCANCODE_E) {
+                        if (profileName.size() < ash_horizon::PlayerProfile::MAX_NAME_LENGTH) {
+                            const char selected = PROFILE_CHARACTERS[selectedProfileCharacter];
+                            if (selected != ' ' || !profileName.empty())
+                                profileName.push_back(selected);
+                        }
                         lastAction = now;
-                    } else if (key == SDL_SCANCODE_TAB) {
-                        selectedGender = 1 - selectedGender;
-                        lastAction = now;
-                    } else if (key == SDL_SCANCODE_RETURN || key == SDL_SCANCODE_KP_ENTER) {
+                    } else if (key == SDL_SCANCODE_B && !profileName.empty()) {
+                        profileName.pop_back(); lastAction = now;
+                    } else if (key == SDL_SCANCODE_T) {
+                        selectedGender = 1 - selectedGender; lastAction = now;
+                    } else if (key == SDL_SCANCODE_I) {
                         const auto gender = selectedGender == 0
                             ? ash_horizon::PlayerGender::Male
                             : ash_horizon::PlayerGender::Female;
                         if (saveData.profile.setName(profileName) &&
                             saveData.profile.setGender(gender) &&
                             ash_horizon::SaveGameStore::save(savePath, saveData, party)) {
-                            SDL_StopTextInput(window);
                             mode = party.empty() ? Mode::Starter : Mode::World;
                         }
                         lastAction = now;
@@ -602,7 +618,7 @@ int main(int, char**) {
         }
 
         if (mode == Mode::Profile) {
-            drawProfileSetup(renderer, profileName, selectedGender);
+            drawProfileSetup(renderer, profileName, selectedGender, selectedProfileCharacter);
         } else if (mode == Mode::Starter) {
             drawStarter(renderer, selectedStarter);
         } else if (mode == Mode::World) {
