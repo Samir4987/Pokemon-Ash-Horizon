@@ -731,6 +731,21 @@ int main(int, char**) {
         if (mode == Mode::Battle) {
             battle.update(dt);
             saveData.arceusBall.update(static_cast<std::uint32_t>(dt * 1000.0f));
+            // The defeat recovery is automatic: no confirmation key is needed
+            // once the final usable Pokémon faints.
+            if (battle.phase() == ash_horizon::BattlePhase::Finished &&
+                ash_horizon::HealingSystem::emergencyReturn(
+                    party, player.x, player.y,
+                    saveData.lastCenterX, saveData.lastCenterY)) {
+                mode = Mode::World;
+                battle.reset();
+                lastEncounter = now;
+                worldMessage = "All Pokemon fainted! Returned to the Center.";
+                worldMessageUntil = now + 3200;
+                saveData.playerX = player.x;
+                saveData.playerY = player.y;
+                ash_horizon::SaveGameStore::save(savePath, saveData, party);
+            }
         }
 
         if (mode == Mode::Profile) {
