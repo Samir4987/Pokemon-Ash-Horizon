@@ -78,18 +78,19 @@ public:
         if (!std::getline(in, header) ||
             (header != "ASH_HORIZON_SAVE 1" && header != "ASH_HORIZON_SAVE 2" &&
              header != "ASH_HORIZON_SAVE 3" && header != "ASH_HORIZON_SAVE 4" &&
-             header != "ASH_HORIZON_SAVE 6"))
+             header != "ASH_HORIZON_SAVE 5" && header != "ASH_HORIZON_SAVE 6"))
             return false;
         const bool hasExperience = header == "ASH_HORIZON_SAVE 2" ||
                                    header == "ASH_HORIZON_SAVE 3" ||
                                    header == "ASH_HORIZON_SAVE 4" ||
-                                   header == "ASH_HORIZON_SAVE 6";
+                                   header == "ASH_HORIZON_SAVE 5" || header == "ASH_HORIZON_SAVE 6";
         const bool hasMoves = header == "ASH_HORIZON_SAVE 3" ||
                               header == "ASH_HORIZON_SAVE 4" ||
-                              header == "ASH_HORIZON_SAVE 6";
+                              header == "ASH_HORIZON_SAVE 5" || header == "ASH_HORIZON_SAVE 6";
         const bool hasProfileAndWallet = header == "ASH_HORIZON_SAVE 4" ||
-                                         header == "ASH_HORIZON_SAVE 6";
-        const bool hasCenterLocation = header == "ASH_HORIZON_SAVE 6";
+                                         header == "ASH_HORIZON_SAVE 5" || header == "ASH_HORIZON_SAVE 6";
+        const bool hasCenterLocation = header == "ASH_HORIZON_SAVE 5" ||
+                                       header == "ASH_HORIZON_SAVE 6";
         const bool hasGenetics = header == "ASH_HORIZON_SAVE 6";
         if (!(in >> std::quoted(serializedRules))) return false;
 
