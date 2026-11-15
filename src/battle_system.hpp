@@ -180,8 +180,9 @@ public:
 
         const SpeciesRecord* attackerSpecies = attacker && database_
             ? database_->findSpecies(attacker->nationalDex) : nullptr;
-        const BattleStats attackerStats = calculateStats(
-            attackerSpecies, attacker ? attacker->level : 5);
+        const BattleStats attackerStats = attacker && party_ && database_
+            ? party_->battleStats(party_->activeIndex(), *database_)
+            : calculateStats(attackerSpecies, attacker ? attacker->level : 5);
         if (move.category == MoveClass::Status) {
             if (move.id == MoveId::Growl) {
                 enemyAttackStage_ = std::max(-6, enemyAttackStage_ - 1);
@@ -339,8 +340,9 @@ private:
             ? database_->findSpecies(defender->nationalDex) : nullptr;
         const SpeciesRecord* attackerSpecies = database_
             ? database_->findSpecies(enemyDex_) : nullptr;
-        const BattleStats defenderStats = calculateStats(
-            defenderSpecies, defender ? defender->level : 5);
+        const BattleStats defenderStats = defender && party_ && database_
+            ? party_->battleStats(party_->activeIndex(), *database_)
+            : calculateStats(defenderSpecies, defender ? defender->level : 5);
         const auto enemyMoveIds = defaultMoveIds(enemyDex_);
         const MoveDefinition* selectedEnemyMove = nullptr;
         for (std::size_t attempt = 0; attempt < enemyMoveIds.size(); ++attempt) {
