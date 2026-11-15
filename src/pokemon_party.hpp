@@ -11,6 +11,7 @@
 #pragma once
 
 #include "pokemon_data.hpp"
+#include "pokemon_genetics.hpp"
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -29,6 +30,9 @@ struct PartyPokemon {
     int maxHp = 1;
     std::uint8_t friendship = 100;
     std::uint32_t experience = 0;
+    std::array<std::uint8_t, 6> ivs{{0, 0, 0, 0, 0, 0}};
+    std::array<std::uint16_t, 6> evs{{0, 0, 0, 0, 0, 0}};
+    NatureId nature = NatureId::Hardy;
     std::array<std::uint16_t, 4> moveIds{{0, 0, 0, 0}};
     std::array<std::uint8_t, 4> movePp{{0, 0, 0, 0}};
     std::uint8_t moveCount = 0;
@@ -50,9 +54,15 @@ public:
         pokemon.speciesName = species->name;
         pokemon.nickname = nickname;
         pokemon.level = level;
-        // Simplified HP formula with IVs and EVs set to zero for this prototype.
-        pokemon.maxHp = std::max(1, ((2 * species->baseStats.hp * level) / 100)
-                                    + level + 10);
+        StatInputs statInputs;
+        statInputs.level = level;
+        statInputs.baseHp = species->baseStats.hp;
+        statInputs.baseAttack = species->baseStats.attack;
+        statInputs.baseDefense = species->baseStats.defense;
+        statInputs.baseSpecialAttack = species->baseStats.specialAttack;
+        statInputs.baseSpecialDefense = species->baseStats.specialDefense;
+        statInputs.baseSpeed = species->baseStats.speed;
+        pokemon.maxHp = calculateBattleStats(statInputs).hp;
         pokemon.currentHp = pokemon.maxHp;
         members_.push_back(pokemon);
         if (members_.size() == 1) activeIndex_ = 0;
@@ -67,6 +77,44 @@ public:
         members_[index].maxHp = maxHp;
         members_[index].friendship = friendship;
         return true;
+    }
+
+    bool restoreGenetics(std::size_t index,
+                         const std::array<std::uint8_t, 6>& ivs,
+                         const std::array<std::uint16_t, 6>& evs,
+                         std::uint8_t nature) {
+        if (index >= members_.size() || nature >= NATURE_COUNT) return false;
+        std::array<int, 6> ivValues{}, evValues{};
+        for (std::size_t i = 0; i < 6; ++i) {
+            ivValues[i] = ivs[i];
+            evValues[i] = evs[i];
+        }
+        if (!isValidIvSpread(ivValues) || !isValidEvSpread(evValues)) return false;
+        members_[index].ivs = ivs;
+        members_[index].evs = evs;
+        members_[index].nature = static_cast<NatureId>(nature);
+        return true;
+    }
+
+    BattleStats battleStats(std::size_t index, const PokemonDatabase& database) const {
+        if (index >= members_.size()) return {};
+        const PartyPokemon& pokemon = members_[index];
+        const SpeciesRecord* species = database.findSpecies(pokemon.nationalDex);
+        if (!species) return {};
+        StatInputs inputs;
+        inputs.level = pokemon.level;
+        inputs.baseHp = species->baseStats.hp;
+        inputs.baseAttack = species->baseStats.attack;
+        inputs.baseDefense = species->baseStats.defense;
+        inputs.baseSpecialAttack = species->baseStats.specialAttack;
+        inputs.baseSpecialDefense = species->baseStats.specialDefense;
+        inputs.baseSpeed = species->baseStats.speed;
+        for (std::size_t i = 0; i < 6; ++i) {
+            inputs.ivs[i] = pokemon.ivs[i];
+            inputs.evs[i] = pokemon.evs[i];
+        }
+        inputs.nature = natureFromId(static_cast<std::uint8_t>(pokemon.nature));
+        return calculateBattleStats(inputs);
     }
 
     bool restoreMoveState(std::size_t index, std::uint8_t count,
