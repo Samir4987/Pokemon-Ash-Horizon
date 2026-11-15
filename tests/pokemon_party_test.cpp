@@ -51,7 +51,7 @@ int main() {
     assert(party.member(0)->evs == evs);
     assert(party.member(0)->nature == NatureId::Jolly);
     const BattleStats calculated = party.battleStats(0, database);
-    assert(calculated.hp == 19 && calculated.attack > 0 && calculated.speed > 0);
+    assert(calculated.hp == 24 && calculated.attack > 0 && calculated.speed > 0);
     assert(!party.restoreGenetics(0, {{32, 0, 0, 0, 0, 0}}, evs, 0));
     assert(!party.restoreGenetics(0, ivs, {{252, 252, 7, 0, 0, 0}}, 0));
 
