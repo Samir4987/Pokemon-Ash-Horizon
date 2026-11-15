@@ -43,6 +43,17 @@ int main() {
     assert(party.active()->level == 5);
     assert(party.active()->maxHp == 19);
     assert(party.active()->currentHp == 19);
+    assert(party.battleStats(0, database).hp == 19);
+    const std::array<std::uint8_t, 6> ivs{{31, 31, 31, 31, 31, 31}};
+    const std::array<std::uint16_t, 6> evs{{0, 252, 0, 0, 0, 252}};
+    assert(party.restoreGenetics(0, ivs, evs, static_cast<std::uint8_t>(NatureId::Jolly)));
+    assert(party.member(0)->ivs == ivs);
+    assert(party.member(0)->evs == evs);
+    assert(party.member(0)->nature == NatureId::Jolly);
+    const BattleStats calculated = party.battleStats(0, database);
+    assert(calculated.hp == 19 && calculated.attack > 0 && calculated.speed > 0);
+    assert(!party.restoreGenetics(0, {{32, 0, 0, 0, 0, 0}}, evs, 0));
+    assert(!party.restoreGenetics(0, ivs, {{252, 252, 7, 0, 0, 0}}, 0));
 
     assert(!party.switchTo(0));
     assert(party.switchTo(1));
