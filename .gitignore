@@ -1,0 +1,4 @@
+# Imported artwork is kept locally; do not accidentally publish third-party art.
+/assets/pokemon/
+/assets/battle/
+/assets/trainers/
