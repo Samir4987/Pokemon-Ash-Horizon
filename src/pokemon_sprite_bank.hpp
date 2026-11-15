@@ -87,12 +87,23 @@ public:
     }
 
     // Generation 9 Pack follower images are named after the species.
-    bool drawFollower(const std::string& speciesName, float x, float y,
-                      float width, float height, bool shiny = false) {
+    bool drawFollower(const std::string& speciesName, const std::string& direction,
+                      float x, float y, float width, float height, bool shiny = false) {
+        int row = 0;
+        if (direction == "left") row = 1;
+        else if (direction == "right") row = 2;
+        else if (direction == "up") row = 3;
+        else if (direction != "down") return false;
         const std::string folder = shiny ? "assets/pokemon/followers_shiny/" :
                                            "assets/pokemon/followers/";
-        return drawImage(folder + normalizeSpeciesName(speciesName) + ".png",
-                         x, y, width, height);
+        const std::string path = folder + normalizeSpeciesName(speciesName) + ".png";
+        SDL_Texture* texture = loadTexture("follower:" + path, path);
+        if (!texture) return false;
+        const int frame = static_cast<int>((SDL_GetTicks() / 180u) % 4u);
+        SDL_FRect source{static_cast<float>(frame * 64), static_cast<float>(row * 64),
+                         64.0f, 64.0f};
+        SDL_FRect destination{x, y, width, height};
+        return SDL_RenderTexture(renderer_, texture, &source, &destination);
     }
 
     // Draw a frame from a horizontal sprite strip. Useful for custom move and
