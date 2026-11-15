@@ -54,7 +54,7 @@ def main() -> int:
         names = gen9.namelist()
         root = find_prefix(names, "Graphics/Pokemon/Front/")
         root = root[:root.index("Graphics/Pokemon/Front/")]
-        base = root + "Graphics/"
+        base = root
 
         mappings = {
             "Graphics/Pokemon/Front/": output / "pokemon/battle/front",
