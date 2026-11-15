@@ -47,6 +47,9 @@ int main() {
     assert(party.switchTo(1));
     party.damageActive(5);
     party.active()->friendship = 72;
+    const std::array<std::uint8_t, 6> savedIvs{{31, 30, 29, 28, 27, 26}};
+    const std::array<std::uint16_t, 6> savedEvs{{252, 252, 6, 0, 0, 0}};
+    assert(party.restoreGenetics(1, savedIvs, savedEvs, static_cast<std::uint8_t>(NatureId::Adamant)));
 
     SaveGameData data;
     data.battleRules = SaveBattleRules{987654u, BattleStyle::Double};
@@ -97,6 +100,9 @@ int main() {
     assert(loadedParty.active()->nickname == "Backup");
     assert(loadedParty.active()->currentHp == loadedParty.active()->maxHp - 5);
     assert(loadedParty.active()->friendship == 72);
+    assert(loadedParty.active()->ivs == savedIvs);
+    assert(loadedParty.active()->evs == savedEvs);
+    assert(loadedParty.active()->nature == NatureId::Adamant);
 
     ArceusBallState timer;
     timer.startCountdown(1000);
