@@ -43,6 +43,12 @@ jobs:
           g++ -std=c++17 -O2 -Wall -Wextra tests/battle_stats_test.cpp -o battle_stats_test.exe
           ./battle_stats_test.exe
 
+      - name: Run Pokémon genetics and nature unit tests
+        run: |
+          set -euxo pipefail
+          g++ -std=c++17 -O2 -Wall -Wextra tests/pokemon_genetics_test.cpp -o pokemon_genetics_test.exe
+          ./pokemon_genetics_test.exe
+
       - name: Run complete type-chart unit tests
         run: |
           set -euxo pipefail
