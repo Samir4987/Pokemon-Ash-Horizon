@@ -28,8 +28,6 @@ A small, original, GBA-inspired 2D Pokémon-style adventure prototype written in
 
 ## Controls
 
-Ash Horizon uses the user's mGBA-style keyboard layout:
-
 | Game Boy Advance control | Keyboard key |
 |---|---|
 | D-Pad | `W A S D` |
