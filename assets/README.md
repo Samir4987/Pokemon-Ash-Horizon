@@ -1,53 +1,53 @@
-# Ash Horizon sprite-sheet assets
+# Ash Horizon graphics
 
-The game loads sprite sheets lazily. Each sheet contains many equal-sized sprite cells;
-the loader calculates the correct cell from the National Pokédex number. It does not
-require one image file per Pokémon.
+Graphics are loaded lazily through SDL3_image. Keep imported artwork in this local
+folder; the repository ignores the art directories so third-party artwork is not
+accidentally redistributed.
 
-## Default Pokémon sprite sheets
+## Import the supplied archives
 
-Put sheets here:
+From the repository root, run:
 
-```
-assets/pokemon/sheets/normal_front.png
-assets/pokemon/sheets/normal_back.png
-assets/pokemon/sheets/normal_overworld.png
-assets/pokemon/sheets/shiny_front.png
-assets/pokemon/sheets/shiny_back.png
-assets/pokemon/sheets/shiny_overworld.png
-assets/pokemon/sheets/alolan_front.png
+```bat
+python tools\import_graphics.py "Generation 9 Pack v3.3.8(1).zip" "Downloads(1).zip"
 ```
 
-Default sheet layout:
+The importer creates:
 
-- Each cell is 64 × 64 pixels.
-- There are 16 columns.
-- National Dex #1 is the first cell (top-left).
-- National Dex #2 is the next cell to its right, continuing row by row.
-- The loader supports National Dex numbers 1–1025.
-- Missing sheets use the game's temporary fallback graphics.
+- `assets/pokemon/battle/front/` — individual front battle sprites.
+- `assets/pokemon/battle/back/` — individual back battle sprites.
+- `assets/pokemon/followers/` and `followers_shiny/` — 4x4 directional follower sheets.
+- `assets/pokemon/overworld/{down,up,left,right}/` — 32x32 directional sprites.
+- `assets/battle/balls/` — ball and ball-opening artwork from the inspected pack.
 
-If your sheet uses another cell size or column count, register it in code before the
-first sprite request with `PokemonSpriteBank::configureSheet(form, view, path,
-spriteWidth, spriteHeight, columns, firstDex)`.
+The game uses the species name (uppercased) to locate individual battle and follower
+sprites. The overworld archive uses numeric National Dex filenames and currently
+contains IDs 1–493. Missing art always falls back to the simple built-in graphics.
 
-Example:
+## Trainer artwork and move animations
 
-```cpp
-spriteBank.configureSheet("normal", "front",
-    "assets/pokemon/sheets/all_front.png", 80, 80, 12);
+The inspected archives did not contain a usable trainer sprite set or a complete
+library of move-specific battle animations. Optional player images can be placed at:
+
+```
+assets/trainers/player_down.png
+assets/trainers/player_up.png
+assets/trainers/player_left.png
+assets/trainers/player_right.png
 ```
 
-The sheet is loaded once and cached. Individual sprite files are not needed.
+The sprite bank also supports horizontal animation strips through
+`drawAnimationStrip`; each frame must have the same dimensions. No move animation
+files are fabricated by the importer.
 
-## Other assets
+## Sprite-sheet fallback
 
-- `assets/sprites/` — player and NPC sprite sheets
-- `assets/tilesets/` — route, town, and interior tilesets
-- `assets/audio/` — music and sound effects
+The original 64x64, 16-column Pokémon sheet loader remains available for compatible
+sheets in `assets/pokemon/sheets/`. It is not required when using the individual
+species-named battle sprites imported above.
 
-## Asset rights and provenance
+## Rights and provenance
 
-Add original artwork, user-created artwork, or assets whose license explicitly permits
-the intended use. Keep a source and license note alongside third-party asset packs.
-The loader supports the Gen 1–9 Pokédex index; sprite artwork must be supplied separately.
+Only use assets whose source terms permit your intended use and distribution. This
+project does not commit the imported artwork. Keep source/license information with
+any asset pack you choose to use.
