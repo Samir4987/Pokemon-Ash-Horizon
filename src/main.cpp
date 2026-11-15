@@ -117,8 +117,13 @@ void drawMap(SDL_Renderer* r, int cameraX, int cameraY) {
     }
 }
 
-void drawPlayer(SDL_Renderer* r, float x, float y) {
-    // Simple placeholder sprite, drawn from rectangles (no image files).
+void drawPlayer(SDL_Renderer* r, ash_horizon::PokemonSpriteBank& sprites,
+               float x, float y, int direction) {
+    static const char* directions[4] = {"down", "up", "left", "right"};
+    if (sprites.drawImage(std::string("assets/trainers/player_") +
+                          directions[direction >= 0 && direction < 4 ? direction : 0] +
+                          ".png", x, y, 16.0f, 16.0f)) return;
+    // Fallback remains available until a trainer sprite pack is supplied.
     fill(r, x + 2, y, 8, 5, 45, 45, 65);
     fill(r, x + 1, y + 5, 10, 5, 220, 175, 135);
     fill(r, x, y + 10, 12, 5, 55, 85, 190);
@@ -767,7 +772,17 @@ int main(int, char**) {
             for (const auto& creature : livingWorld.creatures()) {
                 drawWildCreature(renderer, spriteBank, creature, cameraX, cameraY);
             }
-            drawPlayer(renderer, player.x - cameraX, player.y - cameraY);
+            const auto* follower = party.active();
+            if (follower) {
+                static const char* followerDirections[4] = {"down", "up", "left", "right"};
+                const int direction = player.direction >= 0 && player.direction < 4
+                    ? player.direction : 0;
+                spriteBank.drawFollower(follower->speciesName, followerDirections[direction],
+                    player.x - cameraX - 6.0f, player.y - cameraY + 7.0f,
+                    24.0f, 24.0f);
+            }
+            drawPlayer(renderer, spriteBank, player.x - cameraX, player.y - cameraY,
+                       player.direction);
             drawWallet(renderer, saveData.profile, saveData.wallet);
             if (nearPokemonCenter(player.x, player.y))
                 debugText(renderer, 8, 145, "X: HEAL AT POKEMON CENTER");
