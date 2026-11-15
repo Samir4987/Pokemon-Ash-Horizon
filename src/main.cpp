@@ -126,24 +126,26 @@ void drawPlayer(SDL_Renderer* r, float x, float y) {
     fill(r, x + 7, y + 14, 4, 2, 45, 45, 55);
 }
 
-void drawWildCreature(SDL_Renderer* r, const ash_horizon::WildCreature& c,
+void drawWildCreature(SDL_Renderer* r, ash_horizon::PokemonSpriteBank& sprites,
+                      const ash_horizon::WildCreature& c,
                       int cameraX, int cameraY) {
-    const float x = c.x - cameraX;
-    const float y = c.y - cameraY;
-    Uint8 red = 105, green = 185, blue = 95;
-    if (c.species == 1) { red = 220; green = 105; blue = 65; }
-    if (c.species == 2) { red = 75; green = 155; blue = 215; }
-
-    const float bob = (c.mood == ash_horizon::WildMood::Rest)
-        ? 0.0f : std::sin(c.animationTime * 8.0f) * 1.2f;
-    fill(r, x + 2, y + 9 + bob, 12, 5, 45, 65, 55);
-    fill(r, x + 3, y + 3 + bob, 10, 9, red, green, blue);
-    fill(r, x + 5, y + 1 + bob, 6, 4, red, green, blue);
-    fill(r, x + 5, y + 6 + bob, 2, 2, 250, 250, 225);
-    fill(r, x + 10, y + 6 + bob, 2, 2, 250, 250, 225);
-    if (c.mood == ash_horizon::WildMood::Play) {
-        fill(r, x + 1, y + bob, 2, 2, 245, 225, 110);
-        fill(r, x + 14, y + 2 + bob, 2, 2, 245, 225, 110);
+    const float x = c.x - cameraX - 8.0f;
+    const float y = c.y - cameraY - 8.0f;
+    const unsigned int dex = c.species == 0 ? 1u : (c.species == 1 ? 4u : 7u);
+    std::string direction = "down";
+    if (std::abs(c.vx) > std::abs(c.vy)) direction = c.vx < 0.0f ? "left" : "right";
+    else if (std::abs(c.vy) > 0.1f) direction = c.vy < 0.0f ? "up" : "down";
+    const float bob = c.mood == ash_horizon::WildMood::Rest
+        ? 0.0f : std::sin(c.animationTime * 8.0f) * 1.0f;
+    if (!sprites.drawOverworldPokemon(dex, direction, x, y + bob, 32.0f, 32.0f)) {
+        // Keep a visible fallback when optional local art has not been imported.
+        Uint8 red = dex == 1 ? 105 : (dex == 4 ? 220 : 75);
+        Uint8 green = dex == 1 ? 185 : (dex == 4 ? 105 : 155);
+        Uint8 blue = dex == 1 ? 95 : (dex == 4 ? 65 : 215);
+        fill(r, x + 7, y + 11 + bob, 18, 13, red, green, blue);
+        fill(r, x + 10, y + 7 + bob, 12, 7, red, green, blue);
+        fill(r, x + 11, y + 12 + bob, 3, 3, 250, 250, 225);
+        fill(r, x + 20, y + 12 + bob, 3, 3, 250, 250, 225);
     }
 }
 
@@ -303,7 +305,8 @@ void drawBattle(SDL_Renderer* r, const ash_horizon::BattleEngine& battle,
     fill(r, 0, 100, SCREEN_W, 60, 95, 170, 90);
     // Platforms and sprite-backed battle creatures (temporary fallbacks if files are absent).
     fill(r, 142, 48, 72, 12, 115, 160, 105);
-    if (!sprites.drawPokemon(enemyDex, "normal", "front", 157, 14, 40, 38)) {
+    if (!sprites.drawPokemonByName(enemyName, "front", 157, 14, 40, 38) &&
+        !sprites.drawPokemon(enemyDex, "normal", "front", 157, 14, 40, 38)) {
         fill(r, 162, 25, 28, 24, 225, 125, 75);
         fill(r, 168, 31, 5, 5, 255, 245, 210);
         fill(r, 180, 31, 5, 5, 255, 245, 210);
@@ -311,7 +314,8 @@ void drawBattle(SDL_Renderer* r, const ash_horizon::BattleEngine& battle,
     fill(r, 18, 105, 85, 13, 115, 160, 105);
     const auto* activePokemon = battle.activePokemon();
     const int playerDex = activePokemon ? activePokemon->nationalDex : 1;
-    if (!sprites.drawPokemon(playerDex, "normal", "back", 38, 67, 44, 42)) {
+    if (!(activePokemon && sprites.drawPokemonByName(activePokemon->speciesName, "back", 38, 67, 44, 42)) &&
+        !sprites.drawPokemon(playerDex, "normal", "back", 38, 67, 44, 42)) {
         fill(r, 45, 76, 30, 28, 70, 115, 205);
         fill(r, 51, 82, 5, 5, 255, 255, 255);
         fill(r, 64, 82, 5, 5, 255, 255, 255);
@@ -761,7 +765,7 @@ int main(int, char**) {
             drawMap(renderer, cameraX, cameraY);
             drawPokemonCenter(renderer, cameraX, cameraY);
             for (const auto& creature : livingWorld.creatures()) {
-                drawWildCreature(renderer, creature, cameraX, cameraY);
+                drawWildCreature(renderer, spriteBank, creature, cameraX, cameraY);
             }
             drawPlayer(renderer, player.x - cameraX, player.y - cameraY);
             drawWallet(renderer, saveData.profile, saveData.wallet);
