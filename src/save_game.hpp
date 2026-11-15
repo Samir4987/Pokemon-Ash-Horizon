@@ -37,7 +37,7 @@ public:
                      const PokemonParty& party) {
         std::ofstream out(path, std::ios::trunc);
         if (!out) return false;
-        out << "ASH_HORIZON_SAVE 5\n";
+        out << "ASH_HORIZON_SAVE 6\n";
         out << std::quoted(data.battleRules.serialize()) << '\n';
         out << std::quoted(data.profile.name()) << ' '
             << static_cast<unsigned>(data.profile.gender()) << '\n';
@@ -62,6 +62,9 @@ public:
                 out << ' ' << pokemon.moveIds[move] << ' '
                     << static_cast<unsigned>(pokemon.movePp[move]);
             out << '\n';
+            for (std::uint8_t iv : pokemon.ivs) out << static_cast<unsigned>(iv) << ' ';
+            for (std::uint16_t ev : pokemon.evs) out << ev << ' ';
+            out << static_cast<unsigned>(pokemon.nature) << '\n';
         }
         return static_cast<bool>(out);
     }
@@ -75,18 +78,19 @@ public:
         if (!std::getline(in, header) ||
             (header != "ASH_HORIZON_SAVE 1" && header != "ASH_HORIZON_SAVE 2" &&
              header != "ASH_HORIZON_SAVE 3" && header != "ASH_HORIZON_SAVE 4" &&
-             header != "ASH_HORIZON_SAVE 5"))
+             header != "ASH_HORIZON_SAVE 6"))
             return false;
         const bool hasExperience = header == "ASH_HORIZON_SAVE 2" ||
                                    header == "ASH_HORIZON_SAVE 3" ||
                                    header == "ASH_HORIZON_SAVE 4" ||
-                                   header == "ASH_HORIZON_SAVE 5";
+                                   header == "ASH_HORIZON_SAVE 6";
         const bool hasMoves = header == "ASH_HORIZON_SAVE 3" ||
                               header == "ASH_HORIZON_SAVE 4" ||
-                              header == "ASH_HORIZON_SAVE 5";
+                              header == "ASH_HORIZON_SAVE 6";
         const bool hasProfileAndWallet = header == "ASH_HORIZON_SAVE 4" ||
-                                         header == "ASH_HORIZON_SAVE 5";
-        const bool hasCenterLocation = header == "ASH_HORIZON_SAVE 5";
+                                         header == "ASH_HORIZON_SAVE 6";
+        const bool hasCenterLocation = header == "ASH_HORIZON_SAVE 6";
+        const bool hasGenetics = header == "ASH_HORIZON_SAVE 6";
         if (!(in >> std::quoted(serializedRules))) return false;
 
         SaveGameData loaded;
@@ -159,6 +163,24 @@ public:
                 }
                 if (!loadedParty.restoreMoveState(i, static_cast<std::uint8_t>(moveCount),
                                                   moveIds, movePp)) return false;
+            }
+            if (hasGenetics) {
+                std::array<std::uint8_t, 6> ivs{};
+                std::array<std::uint16_t, 6> evs{};
+                unsigned nature = 0;
+                for (std::uint8_t& iv : ivs) {
+                    unsigned value = 0;
+                    if (!(in >> value) || value > 31) return false;
+                    iv = static_cast<std::uint8_t>(value);
+                }
+                for (std::uint16_t& ev : evs) {
+                    unsigned value = 0;
+                    if (!(in >> value) || value > 252) return false;
+                    ev = static_cast<std::uint16_t>(value);
+                }
+                if (!(in >> nature) || nature >= NATURE_COUNT ||
+                    !loadedParty.restoreGenetics(i, ivs, evs,
+                        static_cast<std::uint8_t>(nature))) return false;
             }
         }
         if (!loadedParty.restoreActiveIndex(activeIndex)) return false;
