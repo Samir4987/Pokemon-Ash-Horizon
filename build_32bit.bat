@@ -7,7 +7,7 @@ set "SDL_DIR=C:\SDL3"
 set "SDL_IMAGE_DIR=C:\SDL3_image"
 
 REM If g++ is not on PATH, replace g++ below with its full path.
-g++ -m32 -std=c++17 -O2 -Wall -Wextra src\main.cpp -o PokemonAshHorizon.exe ^
+g++ -m32 -std=c++17 -O2 -Wall -Wextra src\main.cpp -o PokemonMyHorizons.exe ^
   -I"%SDL_DIR%\include" -I"%SDL_IMAGE_DIR%\include" ^
   -L"%SDL_DIR%\lib" -L"%SDL_IMAGE_DIR%\lib" -lSDL3_image -lSDL3
 
@@ -21,6 +21,6 @@ if errorlevel 1 (
 if exist "%SDL_DIR%\bin\SDL3.dll" copy /Y "%SDL_DIR%\bin\SDL3.dll" .
 if exist "%SDL_IMAGE_DIR%\bin\SDL3_image.dll" copy /Y "%SDL_IMAGE_DIR%\bin\SDL3_image.dll" .
 echo.
-echo Build complete: PokemonAshHorizon.exe
+echo Build complete: PokemonMyHorizons.exe
 echo Keep SDL3.dll and SDL3_image.dll beside the EXE.
 pause
