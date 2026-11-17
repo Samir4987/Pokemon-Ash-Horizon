@@ -1,4 +1,4 @@
-# Pokémon: Ash Horizon
+# Pokémon: My Horizons
 
 A small, original, GBA-inspired 2D Pokémon-style adventure prototype written in C++ with SDL3.
 
@@ -61,7 +61,7 @@ This project targets 32-bit Windows (x86) and SDL3.
 2. Download the SDL3 **Win32 / x86 development package** and the matching SDL3_image **32-bit MinGW development package**.
 3. Edit `build_32bit.bat` and set `SDL_DIR` and `SDL_IMAGE_DIR` to the folders containing each library's `include`, `lib`, and `bin` directories.
 4. Run `build_32bit.bat`.
-5. Keep both `SDL3.dll` and `SDL3_image.dll` beside `PokemonAshHorizon.exe`, then run the EXE.
+5. Keep both `SDL3.dll` and `SDL3_image.dll` beside `PokemonMyHorizons.exe`, then run the EXE.
 
 The script uses `g++ -m32`; the compiler itself must have 32-bit MinGW-w64 support. If your SDL package has a different folder layout, adjust the paths in the script.
 
