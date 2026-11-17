@@ -1,6 +1,6 @@
 /*
- * Pokémon: Ash Horizon
- * Copyright (C) 2026 Pokémon: Ash Horizon contributors
+ * Pokémon: My Horizons
+ * Copyright (C) 2026 Pokémon: My Horizons contributors
  * SPDX-License-Identifier: GPL-3.0-only
  *
  * This program is free software: you can redistribute it and/or modify it
@@ -229,7 +229,7 @@ void drawMainMenu(SDL_Renderer* r, int selected) {
     fill(r, 0, 0, SCREEN_W, SCREEN_H, 35, 55, 75);
     fill(r, 28, 20, 184, 120, 238, 240, 220);
     fill(r, 28, 20, 184, 20, 35, 65, 82);
-    debugText(r, 40, 27, "ASH HORIZON MENU");
+    debugText(r, 40, 27, "MY HORIZONS MENU");
     const char* entries[3] = {"BAG", "POKEMON PARTY", "RESUME"};
     for (int i = 0; i < 3; ++i) {
         const int y = 58 + i * 23;
@@ -374,7 +374,7 @@ int main(int, char**) {
     if (!SDL_Init(SDL_INIT_VIDEO)) return 1;
 
     SDL_Window* window = SDL_CreateWindow(
-        "Pokemon: Ash Horizon", SCREEN_W * 3, SCREEN_H * 3, SDL_WINDOW_RESIZABLE);
+        "Pokemon: My Horizons", SCREEN_W * 3, SCREEN_H * 3, SDL_WINDOW_RESIZABLE);
     if (!window) {
         SDL_Quit();
         return 1;
